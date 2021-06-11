@@ -42,12 +42,12 @@ class RecordCheckView(View):
         month      = int(date[1])
         day        = int(date[2])
 
-        mock          = {'hour':8, 'minute':23}
+        mock          = {'hour':10, 'minute':23}
         record.end_at = datetime.datetime(year, month, day, hour=mock['hour'], minute=mock['minute'])
 
         day_total_time = record.end_at - record.start_at
         if day_total_time.days < 0:
-            return JsonResponse({'message': 'IMPOSSIBLE_TINE_ERROR'}, status=400)
+            return JsonResponse({'message': 'IMPOSSIBLE_TIME_ERROR'}, status=400)
         else:
             record.oneday_time = day_total_time.seconds
             record.save()
