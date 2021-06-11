@@ -12,16 +12,16 @@ class RecordCheckView(View):
     # @login_confirm
     def get(self, request):
         # user = request.user
-        user   = User.objects.get(id=2)
-        self.record = Record.objects.filter(user_id=user.id).last()
-        if self.record:
+        user   = User.objects.get(id=3)
+        record = Record.objects.filter(user_id=user.id).last()
+        if record:
             now        = datetime.datetime.now()
             time_gap   = datetime.timedelta(seconds=32406)
             kor_time   = now + time_gap
             today      = str(kor_time).split(' ')[0]
-            self.check_date = str(self.record.start_at).split(' ')[0]
+            check_date = str(record.start_at).split(' ')[0]
 
-            if not today == self.check_date and not self.record.end_at:
+            if not today == check_date and not record.end_at:
                 return JsonResponse({'message': 'NEED_TO_RECORD_ENDTIME_ERROR'}, status=403)
     
         return JsonResponse({'message': 'SUCCESS'}, status=200)
@@ -32,23 +32,25 @@ class RecordCheckView(View):
         # 하루 누적 시간 : 초 단위
 
         # user = request.user
-        user  = User.objects.get(id=2)
-        # data  = json.loads(request.body)     
+        user  = User.objects.get(id=3)
+        # data  = json.loads(request.body)
 
-        date  = self.check_date.split('-')
-        year  = int(date[0])
-        month = int(date[1])
-        day   = int(date[2])
+        record     = Record.objects.filter(user_id=user.id).last()   
+        check_date = str(record.start_at).split(' ')[0]
+        date       = check_date.split('-')
+        year       = int(date[0])
+        month      = int(date[1])
+        day        = int(date[2])
 
         mock          = {'hour':8, 'minute':23}
-        self.record.end_at = datetime.datetime(year, month, day, hour=mock['hour'], minute=mock['minute'])
+        record.end_at = datetime.datetime(year, month, day, hour=mock['hour'], minute=mock['minute'])
 
-        day_total_time = self.record.end_at - self.record.start_at
+        day_total_time = record.end_at - record.start_at
         if day_total_time.days < 0:
             return JsonResponse({'message': 'IMPOSSIBLE_TINE_ERROR'}, status=400)
         else:
-            self.record.oneday_time = day_total_time.seconds
-            self.record.save()
+            record.oneday_time = day_total_time.seconds
+            record.save()
 
         return JsonResponse({'message': 'SUCCESS'}, status=201)
 
@@ -61,7 +63,7 @@ class PutButtonView(View):
         # 출퇴근 눌렀을 때 뜨는 메세지 포함시키기!!
 
         # user = request.user
-        user   = User.objects.get(id=2)
+        user   = User.objects.get(id=3)
         record = Record.objects.filter(user_id=user.id).last()
 
         now      = datetime.datetime.now()
