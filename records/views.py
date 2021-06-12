@@ -12,7 +12,7 @@ class RecordCheckView(View):
     # @login_confirm
     def get(self, request):
         # user = request.user
-        user   = User.objects.get(id=1)
+        user   = User.objects.get(id=2)
         record = Record.objects.filter(user_id=user.id).last()
         if record:
             now        = datetime.datetime.now()
@@ -21,7 +21,7 @@ class RecordCheckView(View):
             check_date = record.start_at.date()
 
             if not kor_time.date() == check_date and not record.end_at:
-                return JsonResponse({'message': 'NEED_TO_RECORD_ENDTIME_ERROR'}, status=403)
+                return JsonResponse({'message': 'NEED_TO_RECORD_ENDTIME_ERROR'}, status=400)
     
         return JsonResponse({'message': 'SUCCESS'}, status=200)
 
@@ -31,7 +31,7 @@ class RecordCheckView(View):
         # 하루 누적 시간 : 초 단위
 
         # user = request.user
-        user          = User.objects.get(id=1)
+        user          = User.objects.get(id=2)
         # data          = json.loads(request.body)
         record        = Record.objects.filter(user_id=user.id).last()
 
@@ -59,7 +59,7 @@ class PutButtonView(View):
         # 출퇴근 눌렀을 때 뜨는 메세지 포함시키기!!
 
         # user = request.user
-        user     = User.objects.get(id=1)
+        user     = User.objects.get(id=2)
         record   = Record.objects.filter(user_id=user.id).last()
         now      = datetime.datetime.now()
         time_gap = datetime.timedelta(seconds=32406)
