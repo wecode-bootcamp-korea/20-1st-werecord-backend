@@ -51,11 +51,6 @@ class MyPageView(View):
             for_indexing         = {order : record for order, record in zip(order, express_week_records)} 
             valid_records_index  = [order for order, record in for_indexing.items() \
                                     if record.year == today.isocalendar().year and record.week == today.isocalendar().week]
-
-            # weekly_record_result = {}
-            # for i in valid_records_index:
-            #     weekly_record_result[f'{records[i].end_at.date().weekday()}'] = records[i].oneday_time
-
             weekly_record_result = {f'{records[i].end_at.date().weekday()}' : records[i].oneday_time \
                                     for i in valid_records_index}
                     
