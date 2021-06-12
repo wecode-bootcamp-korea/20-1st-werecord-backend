@@ -52,9 +52,6 @@ class BatchPageView(View):
                                     'batch_name'       : batch.name,
                                     'batch_total_time' : sum([user.total_time for user in users]),
                                     'ghosts'           : {
-                                        'gold_user_id' : 
-                                        'gold_user_name' : 
-                                        'gold_user_total_time' : 
                                     },
                                     'peers' : [
                                         {
