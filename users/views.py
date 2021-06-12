@@ -22,7 +22,7 @@ class MyPageView(View):
             kor_time = now + time_gap
             today    = kor_time.date()
 
-            records     = Record.objects.filter(user_id=user.id)
+            records     = Record.objects.filter(user_id=user.id).order_by('-start_at')
             start_sum   = 0
             start_count = 0
             end_sum     = 0
@@ -43,18 +43,22 @@ class MyPageView(View):
             DATES_ON_GRAPH = 7
             if len(records) <= 7:
                 week_records = records
-            week_records = records[-DATES_ON_GRAPH:]
-            
-            weekly_record_result = {}
-            for week_record in week_records:
-                weekly_record_result['MON'] = week_record.oneday_time if week_record.start_at.weekday() == 0 else None
-                weekly_record_result['TUE'] = week_record.oneday_time if week_record.start_at.weekday() == 1 else None
-                weekly_record_result['WED'] = week_record.oneday_time if week_record.start_at.weekday() == 2 else None
-                weekly_record_result['THU'] = week_record.oneday_time if week_record.start_at.weekday() == 3 else None
-                weekly_record_result['FRI'] = week_record.oneday_time if week_record.start_at.weekday() == 4 else None
-                weekly_record_result['SAT'] = week_record.oneday_time if week_record.start_at.weekday() == 5 else None
-                weekly_record_result['SUN'] = week_record.oneday_time if week_record.start_at.weekday() == 6 else None
+            else:
+                week_records = records[DATES_ON_GRAPH:]
 
+            express_week_records = [week_record.end_at.date().isocalendar() for week_record in week_records]
+            order                = [i for i in range(len(express_week_records))]
+            for_indexing         = {order : record for order, record in zip(order, express_week_records)} 
+            valid_records_index  = [order for order, record in for_indexing.items() \
+                                    if record.year == today.isocalendar().year and record.week == today.isocalendar().week]
+
+            # weekly_record_result = {}
+            # for i in valid_records_index:
+            #     weekly_record_result[f'{records[i].end_at.date().weekday()}'] = records[i].oneday_time
+
+            weekly_record_result = {f'{records[i].end_at.date().weekday()}' : records[i].oneday_time \
+                                    for i in valid_records_index}
+                    
             total_accumulate_record_result = []
             oneday_time_sum = 0
             for record in records:
