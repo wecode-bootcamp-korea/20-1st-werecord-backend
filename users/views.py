@@ -8,14 +8,14 @@ from users.models   import User
 from records.models import Record
 class MyPageView(View):
     # @login_confirm
-    def get(self, request, user_type_id):
+    def get(self, request):
         # 멘토 페이지 만들면 연결시키고 활성화
-        if user_type_id == 1:
+        # user = request.user
+        user = User.objects.get(id=2)
+        if user.user_type.id == 1:
             return JsonResponse({'message': 'WE_NEED_MORE_TIME..!'}, status = 200)
 
-        if user_type_id == 2:
-            # user = request.user
-            user     = User.objects.get(id=1)
+        if user.user_type.id == 2:
             user     = User.objects.select_related('user_type', 'batch', 'position').get(id=user.id)
             now      = datetime.datetime.now()
             time_gap = datetime.timedelta(seconds=32406)
