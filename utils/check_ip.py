@@ -11,7 +11,7 @@ def check_ip(original_function):
         else:
             user_ip = request.META.get('REMOTE_ADDR')
         
-        if not user_ip.split('.')[0] == "192" and not user_ip.split('.')[1] == "168":
+        if not user_ip.split('.')[0] == "10" and not user_ip.split('.')[1] == "58":
             return JsonResponse({'message': 'LOCATION_ERROR'}, status=400)
 
         return original_function(self, request, **kwargs)
