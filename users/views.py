@@ -1,16 +1,17 @@
 import json
 import datetime
 
-from django.http  import JsonResponse
-from django.views import View
-from datetime     import date
+from django.http    import JsonResponse
+from django.views   import View
+from datetime       import date
 
-from users.models import User, Batch
+from users.models   import User, Batch
+
 class BatchPageView(View):
     # @login_confirm
     def get(self, request):
         # user = request.user
-        user = User.objects.get(id=1)
+        user         = User.objects.get(id=2)
         get_batch_id = request.GET.get('batch_id', None)
 
         # if user.user_type_id == 2:
@@ -21,20 +22,18 @@ class BatchPageView(View):
         my_batch_users = User.objects.filter(batch_id=my_batch.id)
         now            = datetime.datetime.now()
         time_gap       = datetime.timedelta(seconds=32406)
-        kor_time       = now + time_gap
+        now_korea      = now + time_gap
 
-        batches           = Batch.objects.all()
+        all_batches       = Batch.objects.all()
         batch_total_times = []
-        for batch in batches:
-            each_batch_users = User.objects.filter(batch_id=batch.id)
-            batch_total_times.append(sum([user.total_time for user in each_batch_users]))
-        winner_batch_time = max(batch_total_times)
-        index_number      = batch_total_times.index(winner_batch_time)
-        winner_batch      = batches[index_number]
+        for batch in all_batches:
+            batch_users = User.objects.filter(batch_id=batch.id)
+            batch_total_times.append(sum([user.total_time for user in batch_users]))
+        winner_total_time = max(batch_total_times)
 
         GOST_RANKING = 3
 
-        today               = kor_time.isocalendar()
+        today               = now_korea.isocalendar()
         last_week_start_day = date.fromisocalendar(today.year, today.week-1, 1)
         last_week_end_day   = last_week_start_day + datetime.timedelta(days=6)
 
@@ -64,24 +63,25 @@ class BatchPageView(View):
         result = [
             {
                 'winner_batch_information' : {
-                                    'winner_batch_name' : winner_batch.name,
-                                    'winner_batch_total_time' : winner_batch_time
+                                'winner_batch_name'       : all_batches[batch_total_times.index(winner_total_time)].name,
+                                'winner_batch_total_time' : winner_total_time
                 },
                 'my_batch_information' : {
-                                    'batch_id'         : my_batch.id,
-                                    'batch_name'       : my_batch.name,
-                                    'batch_total_time' : sum([user.total_time for user in my_batch_users]),
-                                    'ghost_ranking'    : ranking_results,
-                                    'peers' : [
-                                        {
-                                            'peer_id'                : user.id,
-                                            'peer_name'              : user.name,
-                                            'peer_profile_image_url' : user.profile_image_url,
-                                            'peer_status'            : 'OFF' if not user.record_set.last() else 'ON' if not kor_time.date() == user.record_set.last().start_at.date() and not user.record_set.last().end_at else 'OFF',
-                                        } for user in my_batch_users
-                                    ]
+                                'batch_id'         : my_batch.id,
+                                'batch_name'       : my_batch.name,
+                                'batch_total_time' : sum([user.total_time for user in my_batch_users]),
+                                'ghost_ranking'    : ranking_results,
+                                'peers' : [
+                                    {
+                                        'peer_id'                : user.id,
+                                        'peer_name'              : user.name,
+                                        'peer_profile_image_url' : user.profile_image_url,
+                                        'peer_status'            : 'OFF' if not user.record_set.last() else 'ON' if now_korea.date() == user.record_set.last().start_at.date() and not user.record_set.last().end_at else 'OFF',
+                                    } for user in my_batch_users
+                                ]
                 }
             }
         ]
 
         return JsonResponse({'result': result}, status = 200)
+        
