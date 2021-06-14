@@ -11,7 +11,7 @@ class MyPageView(View):
     # @login_confirm
     def get(self, request):
         # user = request.user
-        user = User.objects.get(id=2)
+        user = User.objects.get(id=1)
 
         if user.user_type.id == 1:
             return JsonResponse({'message': 'WE_NEED_MORE_TIME..!'}, status = 200)
@@ -77,7 +77,7 @@ class BatchPageView(View):
     # @login_confirm
     def get(self, request, batch_name):
         # user = request.user
-        user         = User.objects.get(id=2)
+        user         = User.objects.get(id=1)
 
         if user.user_type_id == 2:
             if not user.batch.name == batch_name:

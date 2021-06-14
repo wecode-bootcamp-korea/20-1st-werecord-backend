@@ -12,7 +12,7 @@ class RecordCheckView(View):
     # @login_confirm
     def get(self, request):
         # user = request.user
-        user   = User.objects.get(id=2)
+        user   = User.objects.get(id=1)
         record = Record.objects.filter(user_id=user.id).last()
 
         if record:
@@ -26,10 +26,10 @@ class RecordCheckView(View):
     
         return JsonResponse({'message': 'SUCCESS'}, status=200)
 
-    # @check_ip
+    @check_ip
     def post(self, request):
         # user = request.user
-        user           = User.objects.get(id=2)
+        user           = User.objects.get(id=1)
         data           = json.loads(request.body)
         record         = Record.objects.filter(user_id=user.id).last()
         date           = record.start_at
@@ -48,10 +48,10 @@ class RecordCheckView(View):
 
 class PutButtonView(View):
     # @login_confirm
-    # @check_ip
+    @check_ip
     def get(self, request, type_id):     
         # user = request.user
-        user      = User.objects.get(id=2)
+        user      = User.objects.get(id=1)
         record    = Record.objects.filter(user_id=user.id).last()
         now       = datetime.datetime.now()
         time_gap  = datetime.timedelta(seconds=32406)
