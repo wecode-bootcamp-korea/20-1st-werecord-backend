@@ -98,4 +98,3 @@ class PutButtonView(View):
             comment = '오늘 하루도 수고하셨습니다!'
 
             return JsonResponse({'message': 'SUCCESS', 'comment': comment}, status=201)
-            
