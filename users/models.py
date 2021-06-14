@@ -38,8 +38,8 @@ class Batch(models.Model):
     class Meta:
         db_table = "batches"
 
-    def __str__(self):
-        return self.name
+    # def __int__(self):
+    #     return self.name
 
 class Position(models.Model):
     name = models.CharField(max_length=50)

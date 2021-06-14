@@ -1,19 +1,60 @@
 import json
 import datetime
 
-from datetime       import date
-from django.http    import JsonResponse
-from django.views   import View
+from datetime         import date
+from django.http      import JsonResponse
+from django.views     import View
+from django.db.models import Q
 
-from users.models   import User
+from users.models     import User, Batch
 
 class MyPageView(View):
     # @login_confirm
     def get(self, request):
-        user = request.user
+        # user = request.user
+        user = User.objects.get(id=7)
 
         if user.user_type.id == 1:
-            return JsonResponse({'message': 'WE_NEED_MORE_TIME..!'}, status = 200)
+            now       = datetime.datetime.now()
+            time_gap  = datetime.timedelta(seconds=32406)
+            now_korea = now + time_gap
+
+            q       = Q(start_day__lte=now_korea.date()) & Q(end_day__gte=now_korea.date())
+            batches = Batch.objects.filter(q).order_by('-name')
+
+            total_results = []
+
+            for batch in batches:
+                on_user_number   = 0
+                user_total_times = []
+                users            = User.objects.filter(batch_id=batch.id)
+
+                for user in users:
+                    user_total_times.append(user.total_time)
+                    if not user.record_set.last():
+                        on_user_number += 0
+                    elif now_korea.date() == user.record_set.last().start_at.date() and not user.record_set.last().end_at:
+                        on_user_number += 1
+                    else:
+                        on_user_number += 0
+
+                result = [
+                    {
+                        'batch_id'                : batch.id,
+                        'batch_name'              : batch.name,
+                        'batch_start_day'         : batch.start_day,
+                        'batch_end_day'           : batch.end_day,
+                        'batch_total_time'        : sum(user_total_times),
+                        'wecode_d_day'            : (now_korea.date()-batch.start_day).days,
+                        'batch_on_user_number'    : on_user_number,
+                        'batch_total_user_number' : len(User.objects.filter(batch_id=batch.id))
+
+                    }
+                ]
+
+                total_results.append(result)
+        
+            return JsonResponse({'result': total_results}, status = 200)
 
         if user.user_type.id == 2:
             user      = User.objects.select_related('batch').prefetch_related('record_set').get(id=user.id)
