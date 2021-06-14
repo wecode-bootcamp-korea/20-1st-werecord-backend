@@ -1,17 +1,16 @@
 import json
 import datetime
 
+from datetime       import date
 from django.http    import JsonResponse
 from django.views   import View
-from datetime       import date
 
 from users.models   import User, Batch
 
 class BatchPageView(View):
     # @login_confirm
     def get(self, request, batch_name):
-        # user = request.user
-        user         = User.objects.get(id=2)
+        user = request.user
 
         if user.user_type_id == 2:
             if not user.batch.name == batch_name:
