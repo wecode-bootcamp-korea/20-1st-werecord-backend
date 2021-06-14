@@ -9,16 +9,15 @@ from users.models   import User, Batch
 
 class BatchPageView(View):
     # @login_confirm
-    def get(self, request):
+    def get(self, request, batch_name):
         # user = request.user
         user         = User.objects.get(id=2)
-        get_batch_id = request.GET.get('batch_id', None)
 
-        # if user.user_type_id == 2:
-        #     if not user.batch_id == get_batch_id:
-        #         return JsonResponse({'message': 'NOT_YOUR_BATCHPAGE_ERROR'}, status = 400)
+        if user.user_type_id == 2:
+            if not user.batch.name == batch_name:
+                return JsonResponse({'message': 'NOT_YOUR_BATCHPAGE_ERROR'}, status = 400)
 
-        my_batch       = Batch.objects.get(id=get_batch_id)
+        my_batch       = Batch.objects.get(name=batch_name)
         my_batch_users = User.objects.filter(batch_id=my_batch.id)
         now            = datetime.datetime.now()
         time_gap       = datetime.timedelta(seconds=32406)
