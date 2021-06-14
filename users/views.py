@@ -1,17 +1,16 @@
 import json
 import datetime
 
+from datetime       import date
 from django.http    import JsonResponse
 from django.views   import View
-from datetime       import date
 
 from users.models   import User
 
 class MyPageView(View):
     # @login_confirm
     def get(self, request):
-        # user = request.user
-        user = User.objects.get(id=2)
+        user = request.user
 
         if user.user_type.id == 1:
             return JsonResponse({'message': 'WE_NEED_MORE_TIME..!'}, status = 200)
