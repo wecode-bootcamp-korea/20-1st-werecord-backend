@@ -4,15 +4,13 @@ import datetime
 from django.http    import JsonResponse
 from django.views   import View
 
-from users.models   import User
 from records.models import Record
 from utils.check_ip import check_ip
 
 class RecordCheckView(View):
     # @login_confirm
     def get(self, request):
-        # user = request.user
-        user   = User.objects.get(id=2)
+        user   = request.user
         record = Record.objects.filter(user_id=user.id).last()
 
         if record:
@@ -21,15 +19,14 @@ class RecordCheckView(View):
             now_korea  = now + time_gap
             check_date = record.start_at.date()
 
-            if (not now_korea.date() == check_date) and (not record.end_at):
+            if not now_korea.date() == check_date and not record.end_at:
                 return JsonResponse({'message': 'NEED_TO_RECORD_ENDTIME_ERROR'}, status=400)
     
         return JsonResponse({'message': 'SUCCESS'}, status=200)
 
-    # @check_ip
+    @check_ip
     def post(self, request):
-        # user = request.user
-        user           = User.objects.get(id=2)
+        user           = request.user
         data           = json.loads(request.body)
         record         = Record.objects.filter(user_id=user.id).last()
         date           = record.start_at
@@ -48,10 +45,9 @@ class RecordCheckView(View):
 
 class PutButtonView(View):
     # @login_confirm
-    # @check_ip
+    @check_ip
     def get(self, request, type_id):     
-        # user = request.user
-        user      = User.objects.get(id=2)
+        user      = request.user
         record    = Record.objects.filter(user_id=user.id).last()
         now       = datetime.datetime.now()
         time_gap  = datetime.timedelta(seconds=32406)
@@ -79,7 +75,7 @@ class PutButtonView(View):
         if type_id == 2:
             if not record:
                 return JsonResponse({'message': 'NEED_TO_RECORD_STARTTIME_ERROR'}, status=400)
-            if (record.end_at) and (now_korea.date() == record.end_at.date()):
+            if record.end_at and now_korea.date() == record.end_at.date():
                 return JsonResponse({'message': 'ALREADY_RECORD_ERROR'}, status=400)
             if record.end_at:
                 return JsonResponse({'message': 'NEED_TO_RECORD_STARTTIME_ERROR'}, status=400)
