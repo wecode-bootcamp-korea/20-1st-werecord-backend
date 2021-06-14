@@ -56,8 +56,7 @@ class MyPageView(View):
                     'user_information' : {
                                 'user_id'                : user.id,
                                 'user_name'              : user.name,
-                                'user_profile_image_url' : user.profile_image_url,
-                                'user_total_time'        : user.total_time
+                                'user_profile_image_url' : user.profile_image_url,                                    'user_total_time'        : user.total_time
                     },
                     'record_information' : {
                                 'weekly_record'            : {f'{record.end_at.weekday()}': record.oneday_time \
@@ -72,3 +71,4 @@ class MyPageView(View):
             ]
 
             return JsonResponse({'result': result}, status = 200)
+            
