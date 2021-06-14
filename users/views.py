@@ -56,7 +56,8 @@ class MyPageView(View):
                     'user_information' : {
                                 'user_id'                : user.id,
                                 'user_name'              : user.name,
-                                'user_profile_image_url' : user.profile_image_url,                                    'user_total_time'        : user.total_time
+                                'user_profile_image_url' : user.profile_image_url,
+                                'user_total_time'        : user.total_time
                     },
                     'record_information' : {
                                 'weekly_record'            : {f'{record.end_at.weekday()}': record.oneday_time \
@@ -141,7 +142,9 @@ class BatchPageView(View):
                                         'peer_id'                : user.id,
                                         'peer_name'              : user.name,
                                         'peer_profile_image_url' : user.profile_image_url,
-                                        'peer_status'            : 'OFF' if not user.record_set.last() else 'ON' if now_korea.date() == user.record_set.last().start_at.date() and not user.record_set.last().end_at else 'OFF',
+                                        'peer_status'            : 'OFF' if not user.record_set.last() \
+                                            else 'ON' if now_korea.date() == user.record_set.last().start_at.date() \
+                                            and not user.record_set.last().end_at else 'OFF',
                                     } for user in my_batch_users
                                 ]
                 }
