@@ -31,7 +31,7 @@ class UserType(models.Model):
         return self.name
 
 class Batch(models.Model):
-    name      = models.CharField(max_length=50)
+    name      = models.IntegerField()
     start_day = models.DateField()
     end_day   = models.DateField()
 
