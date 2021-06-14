@@ -11,8 +11,7 @@ from users.models     import User, Batch
 class MyPageView(View):
     # @login_confirm
     def get(self, request):
-        # user = request.user
-        user = User.objects.get(id=7)
+        user = request.user
 
         if user.user_type.id == 1:
             now       = datetime.datetime.now()
