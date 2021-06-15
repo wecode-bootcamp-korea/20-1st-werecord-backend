@@ -101,10 +101,10 @@ class PutButtonView(View):
             
             result = [
                 {
-                    'user_id'    : user.id,
-                    'user_name'  : user.name,
-                    'total_time' : user.total_time,
-                    'comment'    : '오늘 하루도 수고하셨습니다!' 
+                    'user_id'             : user.id,
+                    'user_name'           : user.name,
+                    'user_day_total_time' : record.oneday_time,
+                    'comment'             : '오늘 하루도 수고하셨습니다!' 
                 }
             ]
 
