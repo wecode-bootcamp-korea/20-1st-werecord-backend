@@ -10,11 +10,11 @@ from users.models     import User, Batch
 
 class MyPageView(View):
     # @login_confirm
-    def get(self, request):
+    def get(self, request, user_type_id):
         # user = request.user
-        user = User.obejcts.get(id=1)
+        user = User.objects.get(id=1)
 
-        if user.user_type.id == 1:
+        if user_type_id == 1 and user_type_id == user.user_type.id:
             now       = datetime.datetime.now()
             time_gap  = datetime.timedelta(seconds=32406)
             now_korea = now + time_gap
@@ -56,7 +56,7 @@ class MyPageView(View):
         
             return JsonResponse({'result': total_results}, status = 200)
 
-        if user.user_type.id == 2:
+        elif user_type_id == 2 and user_type_id == user.user_type.id:
             user      = User.objects.select_related('batch').prefetch_related('record_set').get(id=user.id)
             records   = user.record_set.filter(user_id=user.id)
             now       = datetime.datetime.now()
@@ -112,16 +112,19 @@ class MyPageView(View):
             ]
 
             return JsonResponse({'result': result}, status = 200)
+
+        else:
+            return JsonResponse({'message': 'WRONG_PAGE_TYPE_ERROR'}, status = 400)
             
 class BatchPageView(View):
     # @login_confirm
     def get(self, request, batch_name):
         # user = request.user
-        user = User.obejcts.get(id=1)
+        user = User.objects.get(id=1)
 
         if user.user_type_id == 2:
             if not user.batch.name == batch_name:
-                return JsonResponse({'message': 'NOT_YOUR_BATCHPAGE_ERROR'}, status = 400)
+                return JsonResponse({'message': 'NOT_YOUR_BATCH_ERROR'}, status = 400)
 
         my_batch       = Batch.objects.get(name=batch_name)
         my_batch_users = User.objects.filter(batch_id=my_batch.id)
@@ -181,11 +184,11 @@ class BatchPageView(View):
                                         'peer_id'                : user.id,
                                         'peer_name'              : user.name,
                                         'peer_profile_image_url' : user.profile_image_url,
-                                        'peer_position'          : user.position,
-                                        'peer_email'             : user.email,
-                                        'peer_blog'              : user.blog,
-                                        'peer_github'            : user.github,
-                                        'peer_birthday'          : user.birthday,
+                                        'peer_position'          : user.position.name if user.position else None,
+                                        'peer_email'             : user.email if user.email else None,
+                                        'peer_blog'              : user.blog if user.blog else None,
+                                        'peer_github'            : user.github if user.github else None,
+                                        'peer_birthday'          : user.birthday if user.birthday else None,
                                         'peer_status'            : False if not user.record_set.last() \
                                             else True if now_korea.date() == user.record_set.last().start_at.date() \
                                             and not user.record_set.last().end_at else False,
@@ -196,4 +199,5 @@ class BatchPageView(View):
         ]
 
         return JsonResponse({'result': result}, status = 200)
+
         
