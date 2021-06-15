@@ -4,6 +4,7 @@ import datetime
 from django.http    import JsonResponse
 from django.views   import View
 
+from users.models   import User
 from records.models import Record
 from utils.check_ip import check_ip
 
@@ -26,22 +27,27 @@ class RecordCheckView(View):
 
     @check_ip
     def post(self, request):
-        user           = request.user
-        data           = json.loads(request.body)
-        record         = Record.objects.filter(user_id=user.id).last()
-        date           = record.start_at
-        record.end_at  = datetime.datetime(date.year, date.month, date.day, hour=data['hour'], minute=data['minute'])
+        try:
+            user           = request.user
+            data           = json.loads(request.body)
+            record         = Record.objects.filter(user_id=user.id).last()
+            date           = record.start_at
+            record.end_at  = datetime.datetime(date.year, date.month, date.day, hour=data['hour'], minute=data['minute'])
 
-        day_total_time = record.end_at - record.start_at
-        if day_total_time.days < 0:
-            return JsonResponse({'message': 'RECHECK_ENDTIME_ERROR'}, status=400)
-        else:
-            record.oneday_time = day_total_time.seconds
-            record.save()
-            user.total_time   += day_total_time.seconds
-            user.save()
+            day_total_time = record.end_at - record.start_at
+            if day_total_time.days < 0:
+                return JsonResponse({'message': 'RECHECK_ENDTIME_ERROR'}, status=400)
+            else:
+                record.oneday_time = day_total_time.seconds
+                record.save()
+                user.total_time   += day_total_time.seconds
+                user.save()
 
-        return JsonResponse({'message': 'SUCCESS'}, status=201)
+            return JsonResponse({'message': 'SUCCESS'}, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+
 
 class PutButtonView(View):
     # @login_confirm
@@ -64,13 +70,12 @@ class PutButtonView(View):
                 {
                     'user_id'   : user.id,
                     'user_name' : user.name,
-                    'start_at'  : str(now_korea.time())
+                    'start_at'  : str(now_korea.time()),
+                    'comment'   : '좋은 아침 입니다!' 
                 }
             ]
 
-            comment = '좋은 아침 입니다!'
-
-            return JsonResponse({'message': 'SUCCESS', 'result': result, 'comment': comment}, status=201)
+            return JsonResponse({'result': result}, status=201)
 
         if type_id == 2:
             if not record:
@@ -91,6 +96,13 @@ class PutButtonView(View):
                 user.total_time   += day_total_time.seconds
                 user.save()
             
-            comment = '오늘 하루도 수고하셨습니다!'
+            result = [
+                {
+                    'user_id'    : user.id,
+                    'user_name'  : user.name,
+                    'total_time' : user.total_time,
+                    'comment'    : '오늘 하루도 수고하셨습니다!' 
+                }
+            ]
 
-            return JsonResponse({'message': 'SUCCESS', 'comment': comment}, status=201)
+            return JsonResponse({'result': result}, status=201)
