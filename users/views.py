@@ -74,9 +74,14 @@ class BatchPageView(View):
                                         'peer_id'                : user.id,
                                         'peer_name'              : user.name,
                                         'peer_profile_image_url' : user.profile_image_url,
-                                        'peer_status'            : 'OFF' if not user.record_set.last() \
-                                            else 'ON' if now_korea.date() == user.record_set.last().start_at.date() \
-                                            and not user.record_set.last().end_at else 'OFF',
+                                        'peer_position'          : user.position,
+                                        'peer_email'             : user.email,
+                                        'peer_blog'              : user.blog,
+                                        'peer_github'            : user.github,
+                                        'peer_birthday'          : user.birthday,
+                                        'peer_status'            : False if not user.record_set.last() \
+                                            else True if now_korea.date() == user.record_set.last().start_at.date() \
+                                            and not user.record_set.last().end_at else False,
                                     } for user in my_batch_users
                                 ]
                 }
