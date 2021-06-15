@@ -10,10 +10,10 @@ from users.models     import User, Batch
 
 class MyPageView(View):
     # @login_confirm
-    def get(self, request):
+    def get(self, request, user_type_id):
         user = request.user
 
-        if user.user_type.id == 1:
+        if user_type_id == 1 and user_type_id == user.user_type.id:
             now       = datetime.datetime.now()
             time_gap  = datetime.timedelta(seconds=32406)
             now_korea = now + time_gap
@@ -55,7 +55,7 @@ class MyPageView(View):
         
             return JsonResponse({'result': total_results}, status = 200)
 
-        if user.user_type.id == 2:
+        elif user_type_id == 2 and user_type_id == user.user_type.id:
             user      = User.objects.select_related('batch').prefetch_related('record_set').get(id=user.id)
             records   = user.record_set.filter(user_id=user.id)
             now       = datetime.datetime.now()
@@ -111,4 +111,6 @@ class MyPageView(View):
             ]
 
             return JsonResponse({'result': result}, status = 200)
-            
+
+        else:
+            return JsonResponse({'message': 'WRONG_PAGE_TYPE_ERROR'}, status = 400)
