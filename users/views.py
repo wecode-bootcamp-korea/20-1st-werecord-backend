@@ -1,11 +1,11 @@
 import json
 import datetime
 
-from datetime       import date
-from django.http    import JsonResponse
-from django.views   import View
+from datetime     import date
+from django.http  import JsonResponse
+from django.views import View
 
-from users.models   import User, Batch
+from users.models import User, Batch
 
 class BatchPageView(View):
     # @login_confirm
@@ -14,7 +14,7 @@ class BatchPageView(View):
 
         if user.user_type_id == 2:
             if not user.batch.name == batch_name:
-                return JsonResponse({'message': 'NOT_YOUR_BATCHPAGE_ERROR'}, status = 400)
+                return JsonResponse({'message': 'NOT_YOUR_BATCH_ERROR'}, status = 400)
 
         my_batch       = Batch.objects.get(name=batch_name)
         my_batch_users = User.objects.filter(batch_id=my_batch.id)
@@ -74,11 +74,11 @@ class BatchPageView(View):
                                         'peer_id'                : user.id,
                                         'peer_name'              : user.name,
                                         'peer_profile_image_url' : user.profile_image_url,
-                                        'peer_position'          : user.position,
-                                        'peer_email'             : user.email,
-                                        'peer_blog'              : user.blog,
-                                        'peer_github'            : user.github,
-                                        'peer_birthday'          : user.birthday,
+                                        'peer_position'          : user.position.name if user.position else None,
+                                        'peer_email'             : user.email if user.email else None,
+                                        'peer_blog'              : user.blog if user.blog else None,
+                                        'peer_github'            : user.github if user.github else None,
+                                        'peer_birthday'          : user.birthday if user.birthday else None,
                                         'peer_status'            : False if not user.record_set.last() \
                                             else True if now_korea.date() == user.record_set.last().start_at.date() \
                                             and not user.record_set.last().end_at else False,
