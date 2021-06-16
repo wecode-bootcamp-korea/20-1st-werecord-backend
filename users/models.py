@@ -4,8 +4,8 @@ class User(models.Model):
     google_login_id   = models.CharField(max_length=250, unique=True)
     email             = models.EmailField(max_length=250)
     profile_image_url = models.URLField(max_length=2000)
-    name              = models.CharField(max_length=50)
-    user_type         = models.ForeignKey("UserType", on_delete=models.CASCADE)
+    name              = models.CharField(max_length=50, null=True)
+    user_type         = models.ForeignKey("UserType", on_delete=models.CASCADE, default=2)
     batch             = models.ForeignKey("Batch", on_delete=models.CASCADE, null=True)
     position          = models.ForeignKey("Position", on_delete=models.CASCADE, null=True)
     blog              = models.CharField(max_length=500, null=True)
@@ -31,15 +31,15 @@ class UserType(models.Model):
         return self.name
 
 class Batch(models.Model):
-    name      = models.IntegerField()
+    name      = models.CharField(max_length=50)
     start_day = models.DateField()
     end_day   = models.DateField()
 
     class Meta:
         db_table = "batches"
 
-    # def __str__(self):
-    #     return self.name
+    def __str__(self):
+        return self.name
 
 class Position(models.Model):
     name = models.CharField(max_length=50)

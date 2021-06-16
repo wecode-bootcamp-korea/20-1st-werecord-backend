@@ -50,8 +50,7 @@ class RecordCheckView(View):
         except json.JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
 
-
-class PutButtonView(View):
+class RecordTimeView(View):
     # @login_confirm
     @check_ip
     def get(self, request, type_id):     
@@ -62,21 +61,18 @@ class PutButtonView(View):
         time_gap  = datetime.timedelta(seconds=32406)
         now_korea = now + time_gap
         
-        if type_id == 1:
-            if record:
-                if now_korea.date() == record.start_at.date():
-                    return JsonResponse({'message': 'ALREADY_RECORD_ERROR'}, status=400)
+        if type_id == 1 and record:
+            if now_korea.date() == record.start_at.date():
+                return JsonResponse({'message': 'ALREADY_RECORD_ERROR'}, status=400)
 
             Record.objects.create(user_id=user.id, start_at=now_korea)
 
-            result = [
-                {
-                    'user_id'   : user.id,
-                    'user_name' : user.name,
-                    'start_at'  : str(now_korea.time()),
-                    'comment'   : '좋은 아침 입니다!' 
-                }
-            ]
+            result = {
+                        'user_id'   : user.id,
+                        'user_name' : user.name,
+                        'start_at'  : str(now_korea.time()),
+                        'comment'   : '좋은 아침 입니다!' 
+            }
 
             return JsonResponse({'result': result}, status=201)
 
@@ -99,13 +95,11 @@ class PutButtonView(View):
                 user.total_time   += day_total_time.seconds
                 user.save()
             
-            result = [
-                {
-                    'user_id'          : user.id,
-                    'user_name'        : user.name,
-                    'user_oneday_time' : record.oneday_time,
-                    'comment'          : '오늘 하루도 수고하셨습니다!' 
-                }
-            ]
+            result = {
+                        'user_id'          : user.id,
+                        'user_name'        : user.name,
+                        'user_oneday_time' : record.oneday_time,
+                        'comment'          : '오늘 하루도 수고하셨습니다!' 
+            }
 
             return JsonResponse({'result': result}, status=201)

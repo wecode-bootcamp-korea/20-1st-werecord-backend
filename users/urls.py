@@ -1,8 +1,9 @@
 from django.urls import path
 
-from users.views import MyPageView, BatchPageView
+from users.views import MentoPageView, StudentPageView, BatchPageView
 
 urlpatterns = [
-    path("/mypage/<int:user_type_id>", MyPageView.as_view()),
+    path("/mento", MentoPageView.as_view()),
+    path("/student", StudentPageView.as_view()),
     path("/batchpage/<int:batch_name>", BatchPageView.as_view())
 ]
