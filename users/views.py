@@ -12,9 +12,9 @@ class MentoPageView(View):
     # @login_confirm
     def get(self, request):
         # user = request.user
-        user = User.objects.get(id=1)
+        user = User.objects.get(id=7)
         
-        if not user.user_type == 1:
+        if not user.user_type.id == 1:
             return JsonResponse({'message': 'UNAUTHORIZED_USER_ERROR'}, status = 400)
 
         now       = datetime.datetime.now()
@@ -40,20 +40,17 @@ class MentoPageView(View):
                 else:
                     on_user_number += 0
 
-            result = [
-                {
-                    'batch_id'                : batch.id,
-                    'batch_name'              : batch.name,
-                    'batch_start_day'         : batch.start_day,
-                    'batch_end_day'           : batch.end_day,
-                    'batch_total_time'        : sum(user_total_times),
-                    'wecode_d_day'            : (now_korea.date()-batch.start_day).days,
-                    'batch_on_user_number'    : on_user_number,
-                    'batch_total_user_number' : len(User.objects.filter(batch_id=batch.id))
-
-                }
-            ]
-
+            result = {
+                        'batch_id'                : batch.id,
+                        'batch_name'              : batch.name,
+                        'batch_start_day'         : batch.start_day,
+                        'batch_end_day'           : batch.end_day,
+                        'batch_total_time'        : sum(user_total_times),
+                        'wecode_d_day'            : (now_korea.date()-batch.start_day).days,
+                        'batch_on_user_number'    : on_user_number,
+                        'batch_total_user_number' : len(User.objects.filter(batch_id=batch.id))
+            }
+            
             total_results.append(result)
         
         return JsonResponse({'result': total_results}, status = 200)
@@ -64,7 +61,7 @@ class StudentPageView(View):
         # user = request.user
         user = User.objects.get(id=1)
 
-        if not user.user_type == 2:
+        if not user.user_type.id == 2:
             return JsonResponse({'message': 'UNAUTHORIZED_USER_ERROR'}, status = 400)
 
         user      = User.objects.select_related('batch').prefetch_related('record_set').get(id=user.id)
@@ -94,6 +91,10 @@ class StudentPageView(View):
         week_start_day = date.fromisocalendar(today.year, today.week, 1)
         week_end_day   = week_start_day + datetime.timedelta(days=6)
         week_records   = records.filter(end_at__date__range=[week_start_day, week_end_day])
+
+        weekly_records     = {f'{record.end_at.weekday()}': record.oneday_time for record in week_records}
+        full_weekly_record = {week_number : weekly_records[str(week_number)] \
+                                if str(week_number) in weekly_records.keys() else 0 for week_number in range(5)}
                     
         total_accumulate_record_result = []
         oneday_time_sum = 0
@@ -102,25 +103,22 @@ class StudentPageView(View):
                 oneday_time_sum += record.oneday_time
                 total_accumulate_record_result.append(oneday_time_sum)
 
-        result = [
-            {
-                'user_information' : {
-                            'user_id'                : user.id,
-                            'user_name'              : user.name,
-                            'user_profile_image_url' : user.profile_image_url,
-                            'user_total_time'        : user.total_time
-                },
-                'record_information' : {
-                            'weekly_record'            : {f'{record.end_at.weekday()}': record.oneday_time \
-                                                            for record in week_records},
-                            'total_accumulate_records' : total_accumulate_record_result,
-                            'average_start_time'       : str(datetime.timedelta(seconds=start_sum/start_count)),
-                            'average_end_time'         : str(datetime.timedelta(seconds=end_sum/end_count)),
-                            'wecode_d_day'             : (now_korea.date()-user.batch.start_day).days
+        result = {
+                    'user_information' : {
+                                'user_id'                : user.id,
+                                'user_name'              : user.name,
+                                'user_profile_image_url' : user.profile_image_url,
+                                'user_total_time'        : user.total_time
+                    },
+                    'record_information' : {
+                                'weekly_record'            : full_weekly_record,
+                                'total_accumulate_records' : total_accumulate_record_result,
+                                'average_start_time'       : str(datetime.timedelta(seconds=start_sum/start_count)),
+                                'average_end_time'         : str(datetime.timedelta(seconds=end_sum/end_count)),
+                                'wecode_d_day'             : (now_korea.date()-user.batch.start_day).days
 
-                }
-            }
-        ]
+                    }
+        }
 
         return JsonResponse({'result': result}, status = 200)
         
@@ -174,36 +172,34 @@ class BatchPageView(View):
             user_informaion['user_last_week_total_time'] = ranking_time
             ranking_results.append(user_informaion)
         
-        result = [
-            {
-                'winner_batch_information' : {
+        result = {
+                    'winner_batch_information' : {
                                 'winner_batch_name'       : all_batches[batch_total_times.index(winner_total_time)].name,
                                 'winner_batch_total_time' : winner_total_time
-                },
-                'my_batch_information' : {
+                    },
+                    'my_batch_information' : {
                                 'batch_id'         : Batch.objects.get(id=batch_id).id,
                                 'batch_name'       : Batch.objects.get(id=batch_id).name,
                                 'batch_total_time' : sum([user.total_time for user in my_batch_users]),
                                 'ghost_ranking'    : ranking_results,
                                 'peers' : [
-                                    {
-                                        'batch_id'               : Batch.objects.get(id=batch_id).id,
-                                        'batch_name'             : Batch.objects.get(id=batch_id).name,
-                                        'peer_id'                : user.id,
-                                        'peer_name'              : user.name,
-                                        'peer_profile_image_url' : user.profile_image_url,
-                                        'peer_position'          : user.position.name if user.position else None,
-                                        'peer_email'             : user.email if user.email else None,
-                                        'peer_blog'              : user.blog if user.blog else None,
-                                        'peer_github'            : user.github if user.github else None,
-                                        'peer_birthday'          : user.birthday if user.birthday else None,
-                                        'peer_status'            : False if not user.record_set.last() \
-                                            else True if now_korea.date() == user.record_set.last().start_at.date() \
-                                            and not user.record_set.last().end_at else False,
-                                    } for user in my_batch_users
+                                        {
+                                            'batch_id'               : Batch.objects.get(id=batch_id).id,
+                                            'batch_name'             : Batch.objects.get(id=batch_id).name,
+                                            'peer_id'                : user.id,
+                                            'peer_name'              : user.name,
+                                            'peer_profile_image_url' : user.profile_image_url,
+                                            'peer_position'          : user.position.name if user.position else None,
+                                            'peer_email'             : user.email if user.email else None,
+                                            'peer_blog'              : user.blog if user.blog else None,
+                                            'peer_github'            : user.github if user.github else None,
+                                            'peer_birthday'          : user.birthday if user.birthday else None,
+                                            'peer_status'            : False if not user.record_set.last() \
+                                                else True if now_korea.date() == user.record_set.last().start_at.date() \
+                                                and not user.record_set.last().end_at else False,
+                                        } for user in my_batch_users
                                 ]
-                }
-            }
-        ]
-
+                    }
+        }
+        
         return JsonResponse({'result': result}, status = 200)
