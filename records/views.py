@@ -4,6 +4,7 @@ import datetime
 from django.http     import JsonResponse
 from django.views    import View
 
+from users.models    import User
 from records.models  import Record
 from utils.decorator import login_required
 from utils.check_ip  import check_ip
@@ -16,14 +17,11 @@ class RecordCheckView(View):
         time_gap    = datetime.timedelta(seconds=32406)
         now_korea   = now + time_gap
         record      = user.record_set.last()
+        check_date  = record.start_at.date() if record else None
         user_status = False if not record \
                     else True if now_korea.date() == record.start_at.date() and not record.end_at else False
 
-        if record:
-
-            check_date = record.start_at.date()
-
-            if not now_korea.date() == check_date and not record.end_at:
+        if record and not now_korea.date() == check_date and not record.end_at:
                 return JsonResponse({'message': 'NEED_TO_RECORD_ENDTIME_ERROR', 'result': check_date}, status=400)
             
         result = {
