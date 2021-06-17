@@ -12,7 +12,7 @@ class RecordCheckView(View):
     # @login_confirm
     def get(self, request):
         # user = request.user
-        user   = User.objects.get(id=1)
+        user   = User.objects.get(id=3)
         record = Record.objects.filter(user_id=user.id).last()
 
         if record:
@@ -22,7 +22,7 @@ class RecordCheckView(View):
             check_date = record.start_at.date()
 
             if not now_korea.date() == check_date and not record.end_at:
-                return JsonResponse({'message': 'NEED_TO_RECORD_ENDTIME_ERROR'}, status=400)
+                return JsonResponse({'message': 'NEED_TO_RECORD_ENDTIME_ERROR', 'result': check_date}, status=400)
     
         return JsonResponse({'message': 'SUCCESS'}, status=200)
 
@@ -30,20 +30,21 @@ class RecordCheckView(View):
     def post(self, request):
         try:
             # user = request.user
-            user           = User.objects.get(id=1)
-            data           = json.loads(request.body)
-            record         = Record.objects.filter(user_id=user.id).last()
-            date           = record.start_at
-            record.end_at  = datetime.datetime(date.year, date.month, date.day, hour=data['hour'], minute=data['minute'])
+            user   = User.objects.get(id=3)
+            data   = json.loads(request.body)
+            record = Record.objects.filter(user_id=user.id).last()
+            date   = record.start_at
+            end_at = datetime.datetime(date.year, date.month, date.day, hour=data['hour'], minute=data['minute'])
 
-            day_total_time = record.end_at - record.start_at
+            day_total_time = end_at - record.start_at
             if day_total_time.days < 0:
                 return JsonResponse({'message': 'RECHECK_ENDTIME_ERROR'}, status=400)
-            else:
-                record.oneday_time = day_total_time.seconds
-                record.save()
-                user.total_time   += day_total_time.seconds
-                user.save()
+
+            record.end_at      = end_at
+            record.oneday_time = day_total_time.seconds
+            record.save()
+            user.total_time   += day_total_time.seconds
+            user.save()
 
             return JsonResponse({'message': 'SUCCESS'}, status=201)
 
@@ -55,7 +56,7 @@ class RecordTimeView(View):
     @check_ip
     def get(self, request, type_id):     
         # user = request.user
-        user      = User.objects.get(id=1)
+        user      = User.objects.get(id=3)
         record    = Record.objects.filter(user_id=user.id).last()
         now       = datetime.datetime.now()
         time_gap  = datetime.timedelta(seconds=32406)
