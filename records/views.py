@@ -4,7 +4,6 @@ import datetime
 from django.http     import JsonResponse
 from django.views    import View
 
-from users.models    import User
 from records.models  import Record
 from utils.decorator import login_required
 from utils.check_ip  import check_ip
@@ -62,7 +61,7 @@ class RecordTimeView(View):
     @check_ip
     def get(self, request, type_id):     
         user      = request.user
-        record    = Record.objects.filter(user_id=user.id).last()
+        record    = user.record_set.last()
         now       = datetime.datetime.now()
         time_gap  = datetime.timedelta(seconds=32406)
         now_korea = now + time_gap
