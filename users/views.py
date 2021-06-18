@@ -6,7 +6,6 @@ import boto3
 import time
 import datetime
 
-from datetime          import datetime
 from datetime          import date
 
 from django.views      import View
@@ -71,10 +70,11 @@ class GoogleLoginView(View):
 
         return JsonResponse({'user_info' : user_info, 'werecord_token' : werecord_token}, status=200)
 
-class MentoPageView(View):
+class MentorPageView(View):
     @login_required
     def get(self, request):
-        user = request.user
+        user    = request.user
+        batches = Batch.objects.all().order_by('-name')
         
         if not user.user_type.id == 1:
             return JsonResponse({'message': 'UNAUTHORIZED_USER_ERROR'}, status = 400)
@@ -82,10 +82,7 @@ class MentoPageView(View):
         now       = datetime.datetime.now()
         time_gap  = datetime.timedelta(seconds=32406)
         now_korea = now + time_gap
-
-        q       = Q(start_day__lte=now_korea.date()) & Q(end_day__gte=now_korea.date())
-        batches = Batch.objects.filter(q).order_by('-name')
-
+        
         total_results = []
 
         for batch in batches:
@@ -116,7 +113,27 @@ class MentoPageView(View):
             total_results.append(result)
         
         return JsonResponse({'result': total_results}, status = 200)
+    
+    def post(self, request):
+        try:
+            data      = json.loads(request.body)
+            start_day = time.strptime(data['start_day'], "%Y-%m-%d")
+            end_day   = time.strptime(data['end_day'], "%Y-%m-%d")
+
+            if not start_day < end_day:
+                return JsonResponse({'message': 'RECHECK_DATE_ERROR'}, status=400)
             
+            Batch.objects.create(id=int(data['name']), name=str(data['name']), 
+                                start_day=data['start_day'], end_day=data['end_day'])
+
+            return JsonResponse({'message': 'SUCCESS'}, status=201)
+        
+        except json.JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+        
+        except ValueError:
+            return JsonResponse({'message': 'DATE_FORM_ERROR'}, status=400)
+
 class StudentPageView(View):
     @login_required
     def get(self, request):

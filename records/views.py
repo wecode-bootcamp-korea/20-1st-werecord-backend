@@ -39,6 +39,10 @@ class RecordCheckView(View):
             data   = json.loads(request.body)
             record = user.record_set.last()
             date   = record.start_at
+
+            if not 0 <= data['hour'] <= 23 or not 0 <= data['minute'] <= 59:
+                return JsonResponse({'message': 'TIME_FORM_ERROR'}, status=400)
+
             end_at = datetime.datetime(date.year, date.month, date.day, hour=data['hour'], minute=data['minute'])
 
             day_total_time = end_at - record.start_at
