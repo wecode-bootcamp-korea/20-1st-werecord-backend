@@ -28,9 +28,6 @@ class GoogleLoginView(View):
         if not id_token:
             return JsonResponse({'message': 'ID_TOKEN_REQUIRED'}, status=401)
 
-        if not id_token:
-                return JsonResponse({'message': 'ACCESS_TOKEN_REQUIRED'}, status=401)
-
         user_request = requests.get(f'https://oauth2.googleapis.com/tokeninfo?id_token={id_token}')
         user_info    = user_request.json()
 
@@ -39,8 +36,6 @@ class GoogleLoginView(View):
 
         login_user, created = User.objects.get_or_create(
             google_login_id   = user_info['sub'],
-            email             = user_info['email'],
-            profile_image_url = user_info['picture'],
         )
 
         werecord_token = jwt.encode(
@@ -51,25 +46,16 @@ class GoogleLoginView(View):
                 }, SECRET['secret'],ALGORITHM
         )
 
-        if created is False and login_user.user_type.name is '2':
-            user_info = {
-                'user_id'   : login_user.id,
-                'user_type' : login_user.user_type.name,
-                'batch'     : login_user.batch.name
-            }
-
-        elif created is False and login_user.user_type.name is '1':
-            user_info = {
-                'user_id'   : login_user.id,
-                'user_type' : login_user.user_type.name,
-                'batch'     : ''
-            }
-
-        elif created is True:
-            user_info = ''
+        user_info = {
+            'user_id'          : login_user.id,
+            'user_type'        : login_user.user_type.name if login_user.user_type else "",
+            'batch'            : login_user.batch.name if login_user.batch else "",
+            "email'"           : user_info.get('email') if user_info.get('email') else "",
+            "profile_image_url": user_info.get('picture') if user_info.get('picture') else "",
+        }
 
         return JsonResponse({'user_info' : user_info, 'werecord_token' : werecord_token}, status=200)
-
+        
 class MentorPageView(View):
     @login_required
     def get(self, request):

@@ -1,4 +1,6 @@
 from django.urls import path
+from users.views import GoogleLoginView
+
 
 from users.views import GoogleLoginView, MentorPageView, StudentPageView, BatchPageView
 
