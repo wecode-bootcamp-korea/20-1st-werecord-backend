@@ -6,19 +6,16 @@ import boto3
 import time
 import datetime
 
+from json.decoder      import JSONDecodeError
 from datetime          import date
 
 from django.views      import View
 from django.http       import JsonResponse
-from django.db.models  import Q
-
-from json.decoder      import JSONDecodeError
 
 from my_settings       import SECRET, ALGORITHM, JWT_DURATION_SEC
 from werecord.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 from utils.decorator   import login_required
-
-from users.models      import User, UserType, Batch
+from users.models      import User, Batch
 
 # 로그인
 class GoogleLoginView(View):
@@ -55,7 +52,7 @@ class GoogleLoginView(View):
         }
 
         return JsonResponse({'user_info' : user_info, 'werecord_token' : werecord_token}, status=200)
-        
+
 class MentorPageView(View):
     @login_required
     def get(self, request):

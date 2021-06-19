@@ -79,8 +79,7 @@ class RecordTimeView(View):
             result = {
                         'user_id'   : user.id,
                         'user_name' : user.name,
-                        'start_at'  : str(now_korea.time()),
-                        'comment'   : '좋은 아침 입니다!' 
+                        'start_at'  : str(now_korea.time())
             }
 
             return JsonResponse({'result': result}, status=201)
