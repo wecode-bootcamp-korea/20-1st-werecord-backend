@@ -15,8 +15,7 @@ from django.http       import JsonResponse
 from my_settings       import SECRET, ALGORITHM, JWT_DURATION_SEC
 from werecord.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 from utils.decorator   import login_required
-
-from users.models      import Position, User, UserType, Batch
+from users.models      import User, UserType, Batch, Position
 
 class GoogleLoginView(View):
     def get(self, request):
