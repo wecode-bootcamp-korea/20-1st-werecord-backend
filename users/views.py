@@ -63,7 +63,7 @@ class UserInfoView(View):
     @login_required
     def get(self, request):
 
-        user = User.objects.get(id = request.user)
+        user = request.user
 
         data  = {
                 "user_id"          : user.id,

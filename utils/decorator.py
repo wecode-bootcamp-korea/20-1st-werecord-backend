@@ -22,7 +22,7 @@ def login_required(func):
                     )
 
             user = User.objects.get(id = werecord_token_payload['user_id'])
-            request.user = user.id
+            request.user = user
 
             return func(self, request, *args, **kwargs)
 
