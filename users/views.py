@@ -1,10 +1,10 @@
 import json
-import bcrypt
 import jwt
 import requests
 import boto3
 import time
 import datetime
+import uuid
 
 from json.decoder      import JSONDecodeError
 from datetime          import date
@@ -14,8 +14,10 @@ from django.http       import JsonResponse
 
 from my_settings       import SECRET, ALGORITHM, JWT_DURATION_SEC
 from werecord.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-from utils.decorator   import login_required
-from users.models      import User, Batch
+
+from users.models          import Position, User, UserType, Batch
+
+from utils.decorator       import login_required
 
 # 로그인
 class GoogleLoginView(View):
@@ -263,3 +265,83 @@ class BatchPageView(View):
         }
         
         return JsonResponse({'result': result}, status = 200)
+
+class UserInfoView(View):
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id     = AWS_ACCESS_KEY_ID,
+        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+    )
+
+    @login_required
+    def get(self, request):
+
+        user = User.objects.get(id = request.user)
+
+        data  = {
+                "user_id"          : user.id,
+                'profile_image_url': user.profile_image_url,
+                'name'             : user.name,
+                'user_type'        : user.user_type.name,
+                'batch'            : user.batch.name,
+                'position'         : user.position.name,
+                'blog'             : user.blog,
+                'github'           : user.github,
+                'birthday'         : str(user.birthday)[5:7] + '.' + str(user.birthday)[8:10],
+        }
+        return JsonResponse({'data':data}, status =201)
+
+    def post(self, request, user_id):
+        try:
+            data = json.loads(request.POST['info'])
+            user  = User.objects.get(id = user_id) 
+            
+            image = request.FILES.get('image')
+
+
+            if image is None:
+                image_url = user.profile_image_url
+
+            else:
+                my_uuid    = str(uuid.uuid4())
+
+                self.s3_client.upload_fileobj(
+                    image,
+                    "werecord",
+                    my_uuid,
+                    ExtraArgs={
+                        "ContentType": image.content_type
+                    }
+                )
+        
+                image_url = "https://werecord.s3.ap-northeast-2.amazonaws.com/" + my_uuid
+            print(data.get("birthday"))
+
+            if data.get("birthday"):
+                birthday_list = data.get("birthday").split(".")
+                birthday      = '2000' + '-' + birthday_list[0] + '-' + birthday_list[1]
+        
+            else:
+                birthday = None
+
+            User.objects.filter(id = user_id).update(
+                profile_image_url = image_url,
+                name              = data.get('name'),
+                user_type         = UserType.objects.get(name = data.get('user_type')),
+                batch             = Batch.objects.get(name = data.get("batch")),
+                position          = Position.objects.get(name = data.get("position")),
+                blog              = data.get("blog"),
+                github            = data.get("github"),
+                birthday          = birthday,
+            )
+
+            user_info = {
+                'user_id'   : user.id,
+                'user_type' : user.user_type.name,
+                'batch'     : user.batch.name
+            }
+
+            return JsonResponse({'user_info': user_info, 'message': 'SUCCESS'}, status =201)
+            
+        except KeyError:
+            return JsonResponse({"message": "KEY_ERROR"}, status=400)
