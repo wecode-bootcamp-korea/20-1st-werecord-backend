@@ -7,7 +7,6 @@ from django.views    import View
 from utils.decorator import login_required
 from utils.check_ip  import check_ip
 from records.models  import Record, Message
-from users.models import User
 
 class RecordCheckView(View):
     @login_required
