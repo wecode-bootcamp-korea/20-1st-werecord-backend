@@ -390,3 +390,4 @@ class BatchPageView(View):
         }
         
         return JsonResponse({'result': result}, status = 200)
+        
