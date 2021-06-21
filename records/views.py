@@ -4,9 +4,10 @@ import datetime
 from django.http     import JsonResponse
 from django.views    import View
 
-from records.models  import Record
 from utils.decorator import login_required
 from utils.check_ip  import check_ip
+from records.models  import Record, Message
+from users.models import User
 
 class RecordCheckView(View):
     @login_required
@@ -60,54 +61,63 @@ class RecordCheckView(View):
         except json.JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
 
-class RecordTimeView(View):
+class RecordStartTimeView(View):
     @login_required
     @check_ip
-    def get(self, request, type_id):     
+    def post(self, request):
         user      = request.user
         record    = user.record_set.last()
         now       = datetime.datetime.now()
         time_gap  = datetime.timedelta(seconds=32406)
         now_korea = now + time_gap
         
-        if type_id == 1 and record:
+        if record:
             if now_korea.date() == record.start_at.date():
                 return JsonResponse({'message': 'ALREADY_RECORD_ERROR'}, status=400)
 
-            Record.objects.create(user_id=user.id, start_at=now_korea)
+        Record.objects.create(user_id=user.id, start_at=now_korea)
 
-            result = {
-                        'user_id'   : user.id,
-                        'user_name' : user.name,
-                        'start_at'  : str(now_korea.time())
-            }
+        result = {
+                    'user_id'   : user.id,
+                    'user_name' : user.name,
+                    'start_at'  : str(now_korea.time())
+        }
 
-            return JsonResponse({'result': result}, status=201)
+        return JsonResponse({'result': result}, status=201)
 
-        if type_id == 2:
-            if not record:
-                return JsonResponse({'message': 'NEED_TO_RECORD_STARTTIME_ERROR'}, status=400)
-            if record.end_at and now_korea.date() == record.end_at.date():
-                return JsonResponse({'message': 'ALREADY_RECORD_ERROR'}, status=400)
-            if record.end_at:
-                return JsonResponse({'message': 'NEED_TO_RECORD_STARTTIME_ERROR'}, status=400)
+class RecordStopTimeView(View):
+    @login_required
+    @check_ip
+    def post(self, request):
+        user      = request.user
+        record    = user.record_set.last()
+        now       = datetime.datetime.now()
+        time_gap  = datetime.timedelta(seconds=32406)
+        now_korea = now + time_gap
 
-            record.end_at = now_korea
+        if not record:
+            return JsonResponse({'message': 'NEED_TO_RECORD_STARTTIME_ERROR'}, status=400)
+        if record.end_at and now_korea.date() == record.end_at.date():
+            return JsonResponse({'message': 'ALREADY_RECORD_ERROR'}, status=400)
+        if record.end_at:
+            return JsonResponse({'message': 'NEED_TO_RECORD_STARTTIME_ERROR'}, status=400)
 
-            day_total_time = record.end_at - record.start_at
-            if 0 < day_total_time.seconds <= 60:
-                return JsonResponse({'message': 'CLOSE_TIME_ERROR'}, status=400)
-            else:
-                record.oneday_time = day_total_time.seconds
-                record.save()
-                user.total_time   += day_total_time.seconds
-                user.save()
+        record.end_at = now_korea
+
+        day_total_time = record.end_at - record.start_at
+        if 0 < day_total_time.seconds <= 60:
+            return JsonResponse({'message': 'CLOSE_TIME_ERROR'}, status=400)
+        else:
+            record.oneday_time = day_total_time.seconds
+            record.save()
+            user.total_time   += day_total_time.seconds
+            user.save()
             
-            result = {
-                        'user_id'          : user.id,
-                        'user_name'        : user.name,
-                        'user_oneday_time' : record.oneday_time,
-                        'comment'          : '오늘 하루도 수고하셨습니다!' 
-            }
+        result = {
+                    'user_id'          : user.id,
+                    'user_name'        : user.name,
+                    'user_oneday_time' : record.oneday_time,
+                    'comment'          : Message.objects.all().order_by('?').first().content
+        }
 
-            return JsonResponse({'result': result}, status=201)
+        return JsonResponse({'result': result}, status=201)
