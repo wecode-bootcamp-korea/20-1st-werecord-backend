@@ -182,6 +182,9 @@ class MentorPageView(View):
             start_day = time.strptime(data['start_day'], "%Y-%m-%d")
             end_day   = time.strptime(data['end_day'], "%Y-%m-%d")
 
+            if Batch.objects.filter(name=str(data['name'])).exists():
+                return JsonResponse({'message': 'ALREADY_EXIT_ERROR'}, status=400)
+            
             if not start_day < end_day:
                 return JsonResponse({'message': 'RECHECK_DATE_ERROR'}, status=400)
             
@@ -192,7 +195,7 @@ class MentorPageView(View):
         
         except json.JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
-        
+
         except ValueError:
             return JsonResponse({'message': 'DATE_FORM_ERROR'}, status=400)
 

@@ -5,7 +5,7 @@ class User(models.Model):
     email             = models.EmailField(max_length=250)
     profile_image_url = models.URLField(max_length=2000)
     name              = models.CharField(max_length=50, null=True)
-    user_type         = models.ForeignKey("UserType", on_delete=models.CASCADE, default=2)
+    user_type         = models.ForeignKey("UserType", on_delete=models.CASCADE)
     batch             = models.ForeignKey("Batch", on_delete=models.CASCADE, null=True)
     position          = models.ForeignKey("Position", on_delete=models.CASCADE, null=True)
     blog              = models.CharField(max_length=500, null=True)
@@ -22,7 +22,7 @@ class User(models.Model):
         return self.name
 
 class UserType(models.Model):
-    name = models.CharField(max_length=50, default = 2)
+    name = models.CharField(max_length=50)
 
     class Meta:
         db_table = "user_types"
