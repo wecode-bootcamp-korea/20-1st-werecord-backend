@@ -132,6 +132,66 @@ class UserInfoView(View):
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)
 
+class BatchInfomationView(View):
+    def post(self, request):
+        try:
+            data      = json.loads(request.body)
+            start_day = time.strptime(data['start_day'], "%Y-%m-%d")
+            end_day   = time.strptime(data['end_day'], "%Y-%m-%d")
+
+            if Batch.objects.filter(name=str(data['name'])).exists():
+                return JsonResponse({'message': 'ALREADY_EXIT_ERROR'}, status=400)
+            
+            if not start_day < end_day:
+                return JsonResponse({'message': 'RECHECK_DATE_ERROR'}, status=400)
+
+            if not User.objects.filter(name=data['mentor_name'], user_type_id=1).exists():
+                return JsonResponse({'message': 'RECHECK_MENTOR_NAME_ERROR'}, status=400)
+            
+            Batch.objects.create(id=int(data['name']), name=str(data['name']), 
+                                start_day=data['start_day'], end_day=data['end_day'],
+                                mentor_name=data['mentor_name'])
+
+            return JsonResponse({'message': 'SUCCESS'}, status=201)
+        
+        except json.JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+
+        except ValueError:
+            return JsonResponse({'message': 'DATE_FORM_ERROR'}, status=400)
+
+    def patch(self, request):
+        try:
+            data      = json.loads(request.body)
+            start_day = time.strptime(data['start_day'], "%Y-%m-%d")
+            end_day   = time.strptime(data['end_day'], "%Y-%m-%d")
+
+            if not start_day < end_day:
+                return JsonResponse({'message': 'RECHECK_DATE_ERROR'}, status=400)
+
+            if not User.objects.filter(name=data['mentor_name'], user_type_id=1).exists():
+                return JsonResponse({'message': 'RECHECK_MENTOR_NAME_ERROR'}, status=400)
+
+            batch             = Batch.objects.get(id=data['batch_id'])
+            batch.start_day   = data['start_day'] if data['start_day'] else batch.start_day
+            batch.end_day     = data['end_day'] if data['end_day'] else batch.end_day
+            batch.mentor_name = data['mentor_name'] if data['mentor_name'] else batch.mentor_name
+            batch.save()
+
+            return JsonResponse({'message': 'SUCCESS'}, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+
+        except ValueError:
+            return JsonResponse({'message': 'DATE_FORM_ERROR'}, status=400)
+
+    def delete(self, request):
+        data = json.loads(request.body)
+        Batch.objects.get(id=data['batch_id']).delete()
+
+        return JsonResponse({'message': 'SUCCESS'}, status=204)
+
 class MentorPageView(View):
     @login_required
     def get(self, request):
@@ -176,29 +236,6 @@ class MentorPageView(View):
         
         return JsonResponse({'result': total_results}, status = 200)
     
-    def post(self, request):
-        try:
-            data      = json.loads(request.body)
-            start_day = time.strptime(data['start_day'], "%Y-%m-%d")
-            end_day   = time.strptime(data['end_day'], "%Y-%m-%d")
-
-            if Batch.objects.filter(name=str(data['name'])).exists():
-                return JsonResponse({'message': 'ALREADY_EXIT_ERROR'}, status=400)
-            
-            if not start_day < end_day:
-                return JsonResponse({'message': 'RECHECK_DATE_ERROR'}, status=400)
-            
-            Batch.objects.create(id=int(data['name']), name=str(data['name']), 
-                                start_day=data['start_day'], end_day=data['end_day'])
-
-            return JsonResponse({'message': 'SUCCESS'}, status=201)
-        
-        except json.JSONDecodeError:
-            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
-
-        except ValueError:
-            return JsonResponse({'message': 'DATE_FORM_ERROR'}, status=400)
-
 class StudentPageView(View):
     @login_required
     def get(self, request):
@@ -273,10 +310,12 @@ class BatchPageView(View):
         if user.user_type_id == 2 and not user.batch.id == batch_id:
             return JsonResponse({'message': 'NOT_YOUR_BATCH_ERROR'}, status = 400)
 
-        my_batch_users = User.objects.filter(batch_id=batch_id)
-        now            = datetime.datetime.now()
-        time_gap       = datetime.timedelta(seconds=32406)
-        now_korea      = now + time_gap
+        my_batch        = Batch.objects.get(id=batch_id)
+        my_batch_users  = User.objects.filter(batch_id=my_batch.id)
+        my_batch_mentor = User.objects.get(name=my_batch.mentor_name, user_type_id=1)
+        now             = datetime.datetime.now()
+        time_gap        = datetime.timedelta(seconds=32406)
+        now_korea       = now + time_gap
 
         all_batches       = Batch.objects.all()
         batch_total_times = []
@@ -320,8 +359,8 @@ class BatchPageView(View):
                                 'winner_batch_total_time' : winner_total_time
                     },
                     'my_batch_information' : {
-                                'batch_id'         : Batch.objects.get(id=batch_id).id,
-                                'batch_name'       : Batch.objects.get(id=batch_id).name,
+                                'batch_id'         : my_batch.id,
+                                'batch_name'       : my_batch.name,
                                 'batch_total_time' : sum([user.total_time for user in my_batch_users]),
                                 'ghost_ranking'    : ranking_results,
                                 'peers' : [
@@ -331,8 +370,8 @@ class BatchPageView(View):
                                             'peer_id'                : user.id,
                                             'peer_name'              : user.name,
                                             'peer_profile_image_url' : user.profile_image_url,
-                                            'peer_position'          : user.position.name if user.position else None,
-                                            'peer_email'             : user.email if user.email else None,
+                                            'peer_position'          : user.position.name,
+                                            'peer_email'             : user.email,
                                             'peer_blog'              : user.blog if user.blog else None,
                                             'peer_github'            : user.github if user.github else None,
                                             'peer_birthday'          : user.birthday if user.birthday else None,
@@ -340,7 +379,21 @@ class BatchPageView(View):
                                                 else True if now_korea.date() == user.record_set.last().start_at.date() \
                                                 and not user.record_set.last().end_at else False,
                                         } for user in my_batch_users
-                                ]
+                                ],
+                                'mentor' : 
+                                        {
+                                            'mentor_id'                : my_batch_mentor.id,
+                                            'mentor_name'              : my_batch_mentor.name,
+                                            'mentor_profile_image_url' : my_batch_mentor.profile_image_url,
+                                            'mentor_position'          : my_batch_mentor.position.name,
+                                            'mentor_email'             : my_batch_mentor.email,
+                                            'mentor_blog'              : my_batch_mentor.blog \
+                                                                        if my_batch_mentor.blog else None,
+                                            'mentor_github'            : my_batch_mentor.github \
+                                                                        if my_batch_mentor.github else None,
+                                            'mentor_birthday'          : my_batch_mentor.birthday \
+                                                                        if my_batch_mentor.birthday else None
+                                        }
                     }
         }
         
