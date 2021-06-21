@@ -9,18 +9,8 @@ class Record(models.Model):
     class Meta:
         db_table = "records"
 
-class MessageType(models.Model):
-    name = models.CharField(max_length=50)
-
-    class Meta:
-        db_table = "message_types"
-
-    def __str__(self):
-        return self.name
-
 class Message(models.Model):
-    message_type = models.ForeignKey("MessageType", on_delete=models.CASCADE)
-    content      = models.CharField(max_length=50)
+    content = models.CharField(max_length=500)
 
     class Meta:
         db_table = "messages"
