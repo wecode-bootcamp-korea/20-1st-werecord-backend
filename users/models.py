@@ -23,7 +23,6 @@ class User(models.Model):
 
 class UserType(models.Model):
     name = models.CharField(max_length=50)
-
     class Meta:
         db_table = "user_types"
 
@@ -31,9 +30,10 @@ class UserType(models.Model):
         return self.name
 
 class Batch(models.Model):
-    name      = models.CharField(max_length=50)
-    start_day = models.DateField()
-    end_day   = models.DateField()
+    name        = models.CharField(max_length=50)
+    start_day   = models.DateField()
+    end_day     = models.DateField()
+    mentor_name = models.CharField(max_length=50)
 
     class Meta:
         db_table = "batches"
