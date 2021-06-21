@@ -1,6 +1,4 @@
 import jwt
-import json
-import requests
 
 from django.http  import JsonResponse
 
@@ -28,9 +26,9 @@ def login_required(func):
 
         # 토큰 비정상
         except jwt.DecodeError:
-            return JsonResponse({'message': 'invalid_jwt'}, status=401)
+            return JsonResponse({'message': 'INVALID_JWT'}, status=401)
 
         # 익명의 사용자
         except User.DoesNotExist:
-            return JsonResponse({'message': 'invalid_user'}, status=401)
+            return JsonResponse({'message': 'INVALID_USER'}, status=401)
     return wrapper

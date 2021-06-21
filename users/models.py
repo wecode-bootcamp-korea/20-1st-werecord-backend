@@ -23,6 +23,7 @@ class User(models.Model):
 
 class UserType(models.Model):
     name = models.CharField(max_length=50)
+
     class Meta:
         db_table = "user_types"
 

@@ -62,7 +62,7 @@ class UserInfoView(View):
     @login_required
     def get(self, request):
 
-        user = request.user
+        user = User.objects.get(id = request.user)
 
         data  = {
                 "user_id"          : user.id,
@@ -73,17 +73,16 @@ class UserInfoView(View):
                 'position'         : user.position.name,
                 'blog'             : user.blog,
                 'github'           : user.github,
-                'birthday'         : str(user.birthday)[5:7] + '.' + str(user.birthday)[8:10],
+                'birthday'         : user.birthday,
         }
         return JsonResponse({'data':data}, status =201)
 
     def post(self, request, user_id):
         try:
             data = json.loads(request.POST['info'])
-            user  = User.objects.get(id = user_id) 
-            
-            image = request.FILES.get('image')
+            user = User.objects.get(id = user_id) 
 
+            image = request.FILES.get('image')
 
             if image is None:
                 image_url = user.profile_image_url
@@ -101,14 +100,6 @@ class UserInfoView(View):
                 )
         
                 image_url = "https://werecord.s3.ap-northeast-2.amazonaws.com/" + my_uuid
-            print(data.get("birthday"))
-
-            if data.get("birthday"):
-                birthday_list = data.get("birthday").split(".")
-                birthday      = '2000' + '-' + birthday_list[0] + '-' + birthday_list[1]
-        
-            else:
-                birthday = None
 
             User.objects.filter(id = user_id).update(
                 profile_image_url = image_url,
@@ -118,9 +109,10 @@ class UserInfoView(View):
                 position          = Position.objects.get(name = data.get("position")),
                 blog              = data.get("blog"),
                 github            = data.get("github"),
-                birthday          = birthday,
+                birthday          = data.get("birthday") if data.get("birthday") is not "" else None
             )
 
+            user      = User.objects.get(id = user_id) 
             user_info = {
                 'user_id'   : user.id,
                 'user_type' : user.user_type.name,
@@ -130,7 +122,7 @@ class UserInfoView(View):
             return JsonResponse({'user_info': user_info, 'message': 'SUCCESS'}, status =201)
             
         except KeyError:
-            return JsonResponse({"message": "KEY_ERROR"}, status=400)
+            return JsonResponse({"message": "KEY_ERROR"}, status=400)     
 
 class BatchInfomationView(View):
     def post(self, request):
