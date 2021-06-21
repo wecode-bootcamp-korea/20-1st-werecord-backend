@@ -14,6 +14,3 @@ class Message(models.Model):
 
     class Meta:
         db_table = "messages"
-
-    def __str__(self):
-        return self.name
