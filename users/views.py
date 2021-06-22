@@ -62,7 +62,7 @@ class UserInfoView(View):
     @login_required
     def get(self, request):
 
-        user = User.objects.get(id = request.user)
+        user = request.user
 
         data  = {
                 "user_id"          : user.id,
@@ -123,6 +123,14 @@ class UserInfoView(View):
             
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)     
+
+
+    #@login_required
+    def delete(self, request, user_id):
+        
+        User.objects.filter(id = user_id).delete()
+        
+        return JsonResponse({"message": "SUCCESS"}, status=204)  
 
 class BatchInfomationView(View):
     def post(self, request):
