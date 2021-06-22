@@ -139,7 +139,7 @@ class BatchInfomationView(View):
             end_day   = time.strptime(data['end_day'], "%Y-%m-%d")
 
             if Batch.objects.filter(name=str(data['name'])).exists():
-                return JsonResponse({'message': 'ALREADY_EXIT_ERROR'}, status=400)
+                return JsonResponse({'message': 'ALREADY_EXIST_ERROR'}, status=400)
             
             if not start_day < end_day:
                 return JsonResponse({'message': 'RECHECK_DATE_ERROR'}, status=400)
@@ -166,7 +166,7 @@ class BatchInfomationView(View):
             end_day   = time.strptime(data['end_day'], "%Y-%m-%d")
 
             if Batch.objects.filter(name=str(data['new_batch_id'])).exists():
-                return JsonResponse({'message': 'ALREADY_EXIT_ERROR'}, status=400)
+                return JsonResponse({'message': 'ALREADY_EXIST_ERROR'}, status=400)
 
             if not start_day < end_day:
                 return JsonResponse({'message': 'RECHECK_DATE_ERROR'}, status=400)
