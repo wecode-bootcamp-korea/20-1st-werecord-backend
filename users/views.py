@@ -65,6 +65,7 @@ class UserInfoView(View):
         user = request.user
 
         data  = {
+                "user_id"          : user.id,
                 'profile_image_url': user.profile_image_url,
                 'name'             : user.name,
                 'user_type'        : user.user_type.name,
@@ -76,12 +77,11 @@ class UserInfoView(View):
         }
         return JsonResponse({'data':data}, status =201)
 
-    @login_required
-    def post(self, request):
+    def post(self, request, user_id):
         try:
             data = json.loads(request.POST['info'])
-            user = request.user 
-            
+            user = User.objects.get(id = user_id) 
+
             image = request.FILES.get('image')
 
             if image is None:
@@ -101,7 +101,7 @@ class UserInfoView(View):
         
                 image_url = "https://werecord.s3.ap-northeast-2.amazonaws.com/" + my_uuid
 
-            User.objects.filter(id = user.id).update(
+            User.objects.filter(id = user_id).update(
                 profile_image_url = image_url,
                 name              = data.get('name'),
                 user_type         = UserType.objects.get(name = data.get('user_type')),
@@ -111,8 +111,10 @@ class UserInfoView(View):
                 github            = data.get("github"),
                 birthday          = data.get("birthday") if data.get("birthday") is not "" else None
             )
-            
+
+            user      = User.objects.get(id = user_id) 
             user_info = {
+                'user_id'   : user.id,
                 'user_type' : user.user_type.name,
                 'batch'     : user.batch.name
             }
@@ -122,13 +124,13 @@ class UserInfoView(View):
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)     
 
-    @login_required
-    def delete(self, request):
+
+    #@login_required
+    def delete(self, request, user_id):
         
-        User.objects.filter(id = request.user.id).delete()
+        User.objects.filter(id = user_id).delete()
         
         return JsonResponse({"message": "SUCCESS"}, status=204)  
-
 
 class BatchInfomationView(View):
     def post(self, request):
@@ -164,13 +166,18 @@ class BatchInfomationView(View):
             start_day = time.strptime(data['start_day'], "%Y-%m-%d")
             end_day   = time.strptime(data['end_day'], "%Y-%m-%d")
 
+            if Batch.objects.filter(name=str(data['new_batch_id'])).exists():
+                return JsonResponse({'message': 'ALREADY_EXIT_ERROR'}, status=400)
+
             if not start_day < end_day:
                 return JsonResponse({'message': 'RECHECK_DATE_ERROR'}, status=400)
 
             if not User.objects.filter(name=data['mentor_name'], user_type_id=1).exists():
                 return JsonResponse({'message': 'RECHECK_MENTOR_NAME_ERROR'}, status=400)
-
+            
             batch             = Batch.objects.get(id=data['batch_id'])
+            batch.id          = int(data['new_batch_id']) if data['new_batch_id'] else batch.id
+            batch.name        = str(data['new_batch_id']) if data['new_batch_id'] else batch.name
             batch.start_day   = data['start_day'] if data['start_day'] else batch.start_day
             batch.end_day     = data['end_day'] if data['end_day'] else batch.end_day
             batch.mentor_name = data['mentor_name'] if data['mentor_name'] else batch.mentor_name
@@ -187,9 +194,9 @@ class BatchInfomationView(View):
     def delete(self, request):
         data = json.loads(request.body)
 
-        if User.objects.filter(batch_id=data['batch_id']).exists():
+        if User.objects.filter(batch_id=int(data['batch_id'])).exists():
             return JsonResponse({'message': 'ALREADY_USED_ERROR'}, status=204)
-        Batch.objects.get(id=data['batch_id']).delete()
+        Batch.objects.get(id=int(data['batch_id'])).delete()
 
         return JsonResponse({'message': 'SUCCESS'}, status=204)
 
@@ -402,3 +409,4 @@ class BatchPageView(View):
         }
         
         return JsonResponse({'result': result}, status = 200)
+        
