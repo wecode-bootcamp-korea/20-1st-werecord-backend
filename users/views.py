@@ -354,7 +354,7 @@ class BatchPageView(View):
         
         ranking_results = []
         if sum(compare_times) == 0:
-            ranking_results = None
+            ranking_results = []
         else:
             if len(compare_times) < GOST_RANKING:
                 ranking_times = sorted(compare_times, reverse=True)
