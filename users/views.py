@@ -175,13 +175,16 @@ class BatchInfomationView(View):
             if not User.objects.filter(name=data['mentor_name'], user_type_id=1).exists():
                 return JsonResponse({'message': 'RECHECK_MENTOR_NAME_ERROR'}, status=400)
             
-            batch             = Batch.objects.get(id=data['batch_id'])
+            batch             = Batch.objects.get(id=int(data['batch_id']))
             batch.id          = int(data['new_batch_id']) if data['new_batch_id'] else batch.id
             batch.name        = str(data['new_batch_id']) if data['new_batch_id'] else batch.name
             batch.start_day   = data['start_day'] if data['start_day'] else batch.start_day
             batch.end_day     = data['end_day'] if data['end_day'] else batch.end_day
             batch.mentor_name = data['mentor_name'] if data['mentor_name'] else batch.mentor_name
             batch.save()
+
+            if data['new_batch_id']:
+                Batch.objects.get(id=int(data['batch_id'])).delete()
 
             return JsonResponse({'message': 'SUCCESS'}, status=201)
 
