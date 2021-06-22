@@ -43,7 +43,6 @@ class GoogleLoginView(View):
         )
 
         user_info = {
-            'user_id'          : login_user.id,
             'user_type'        : login_user.user_type.name if login_user.user_type else "",
             'batch'            : login_user.batch.name if login_user.batch else "",
             "email'"           : user_info.get('email') if user_info.get('email') else "",
@@ -65,7 +64,6 @@ class UserInfoView(View):
         user = request.user
 
         data  = {
-                "user_id"          : user.id,
                 'profile_image_url': user.profile_image_url,
                 'name'             : user.name,
                 'user_type'        : user.user_type.name,
@@ -77,10 +75,11 @@ class UserInfoView(View):
         }
         return JsonResponse({'data':data}, status =201)
 
-    def post(self, request, user_id):
+    @login_required
+    def post(self, request):
         try:
             data = json.loads(request.POST['info'])
-            user = User.objects.get(id = user_id) 
+            user = request.user 
 
             image = request.FILES.get('image')
 
@@ -101,7 +100,7 @@ class UserInfoView(View):
         
                 image_url = "https://werecord.s3.ap-northeast-2.amazonaws.com/" + my_uuid
 
-            User.objects.filter(id = user_id).update(
+            User.objects.filter(id = request.user.id).update(
                 profile_image_url = image_url,
                 name              = data.get('name'),
                 user_type         = UserType.objects.get(name = data.get('user_type')),
@@ -112,9 +111,9 @@ class UserInfoView(View):
                 birthday          = data.get("birthday") if data.get("birthday") is not "" else None
             )
 
-            user      = User.objects.get(id = user_id) 
+            user = User.objects.get(id = request.user.id)
+
             user_info = {
-                'user_id'   : user.id,
                 'user_type' : user.user_type.name,
                 'batch'     : user.batch.name
             }
@@ -125,10 +124,10 @@ class UserInfoView(View):
             return JsonResponse({"message": "KEY_ERROR"}, status=400)     
 
 
-    #@login_required
-    def delete(self, request, user_id):
+    @login_required
+    def delete(self, request):
         
-        User.objects.filter(id = user_id).delete()
+        request.user.delete()
         
         return JsonResponse({"message": "SUCCESS"}, status=204)  
 
