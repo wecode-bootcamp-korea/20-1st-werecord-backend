@@ -315,7 +315,7 @@ class StudentPageView(View):
         }
 
         return JsonResponse({'result': result}, status = 200)
-        
+
 class BatchPageView(View):
     @login_required
     def get(self, request, batch_id):
@@ -353,19 +353,22 @@ class BatchPageView(View):
             compare_times.append(last_week_total_time)
         
         ranking_results = []
-        if len(compare_times) < GOST_RANKING:
-            ranking_times = sorted(compare_times, reverse=True)
+        if sum(compare_times) == 0:
+            ranking_results = None
         else:
-            ranking_times = sorted(compare_times, reverse=True)[:GOST_RANKING]
+            if len(compare_times) < GOST_RANKING:
+                ranking_times = sorted(compare_times, reverse=True)
+            else:
+                ranking_times = sorted(compare_times, reverse=True)[:GOST_RANKING]
 
-        for ranking_time in ranking_times:
-            user_informaion = {}
-            index_number = compare_times.index(ranking_time)
-            user_informaion['user_id']                   = my_batch_users[index_number].id
-            user_informaion['user_name']                 = my_batch_users[index_number].name
-            user_informaion['user_profile_image_url']    = my_batch_users[index_number].profile_image_url
-            user_informaion['user_last_week_total_time'] = ranking_time
-            ranking_results.append(user_informaion)
+            for ranking_time in ranking_times:
+                user_informaion = {}
+                index_number = compare_times.index(ranking_time)
+                user_informaion['user_id']                   = my_batch_users[index_number].id
+                user_informaion['user_name']                 = my_batch_users[index_number].name
+                user_informaion['user_profile_image_url']    = my_batch_users[index_number].profile_image_url
+                user_informaion['user_last_week_total_time'] = ranking_time
+                ranking_results.append(user_informaion)
         
         result = {
                     'winner_batch_information' : {
@@ -412,4 +415,3 @@ class BatchPageView(View):
         }
         
         return JsonResponse({'result': result}, status = 200)
-        
