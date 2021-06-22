@@ -180,6 +180,9 @@ class BatchInfomationView(View):
 
     def delete(self, request):
         data = json.loads(request.body)
+
+        if User.objects.filter(batch_id=data['batch_id']).exists():
+            return JsonResponse({'message': 'ALREADY_USED_ERROR'}, status=204)
         Batch.objects.get(id=data['batch_id']).delete()
 
         return JsonResponse({'message': 'SUCCESS'}, status=204)
@@ -216,6 +219,8 @@ class MentorPageView(View):
             result = {
                         'batch_id'                : batch.id,
                         'batch_name'              : batch.name,
+                        'mentor_id'               : User.objects.get(name=batch.mentor_name).id,
+                        'mentor_name'             : User.objects.get(name=batch.mentor_name).name,
                         'batch_start_day'         : batch.start_day,
                         'batch_end_day'           : batch.end_day,
                         'batch_total_time'        : sum(user_total_times),
