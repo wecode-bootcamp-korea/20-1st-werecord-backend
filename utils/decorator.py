@@ -10,6 +10,7 @@ def login_required(func):
     def wrapper(self, request, *args, **kwargs):
         try:
             werecord_token = request.headers.get("Authorization", None)
+            
             if not werecord_token:
                 return JsonResponse({'message': 'LOGIN_REQUIRED'}, status=401)
 
