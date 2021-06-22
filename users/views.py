@@ -65,7 +65,6 @@ class UserInfoView(View):
         user = request.user
 
         data  = {
-                "user_id"          : user.id,
                 'profile_image_url': user.profile_image_url,
                 'name'             : user.name,
                 'user_type'        : user.user_type.name,
@@ -77,11 +76,12 @@ class UserInfoView(View):
         }
         return JsonResponse({'data':data}, status =201)
 
-    def post(self, request, user_id):
+    @login_required
+    def post(self, request):
         try:
             data = json.loads(request.POST['info'])
-            user = User.objects.get(id = user_id) 
-
+            user = request.user 
+            
             image = request.FILES.get('image')
 
             if image is None:
@@ -101,7 +101,7 @@ class UserInfoView(View):
         
                 image_url = "https://werecord.s3.ap-northeast-2.amazonaws.com/" + my_uuid
 
-            User.objects.filter(id = user_id).update(
+            User.objects.filter(id = user.id).update(
                 profile_image_url = image_url,
                 name              = data.get('name'),
                 user_type         = UserType.objects.get(name = data.get('user_type')),
@@ -111,10 +111,8 @@ class UserInfoView(View):
                 github            = data.get("github"),
                 birthday          = data.get("birthday") if data.get("birthday") is not "" else None
             )
-
-            user      = User.objects.get(id = user_id) 
+            
             user_info = {
-                'user_id'   : user.id,
                 'user_type' : user.user_type.name,
                 'batch'     : user.batch.name
             }
@@ -124,13 +122,13 @@ class UserInfoView(View):
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)     
 
-
-    #@login_required
-    def delete(self, request, user_id):
+    @login_required
+    def delete(self, request):
         
-        User.objects.filter(id = user_id).delete()
+        User.objects.filter(id = request.user.id).delete()
         
         return JsonResponse({"message": "SUCCESS"}, status=204)  
+
 
 class BatchInfomationView(View):
     def post(self, request):
