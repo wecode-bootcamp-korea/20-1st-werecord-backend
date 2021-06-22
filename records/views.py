@@ -4,9 +4,9 @@ import datetime
 from django.http     import JsonResponse
 from django.views    import View
 
+from records.models  import Record, Message
 from utils.decorator import login_required
 from utils.check_ip  import check_ip
-from records.models  import Record, Message
 
 class RecordCheckView(View):
     @login_required
