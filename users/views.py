@@ -259,3 +259,74 @@ class BatchListView(View):
             total_results.append(result)
         
         return JsonResponse({'result': total_results}, status = 200)
+
+class CreateBatchView(View):
+    def post(self, request):
+        try:
+            data      = json.loads(request.body)
+            start_day = time.strptime(data['start_day'], "%Y-%m-%d")
+            end_day   = time.strptime(data['end_day'], "%Y-%m-%d")
+
+            if Batch.objects.filter(name=str(data['name'])).exists():
+                return JsonResponse({'message': 'ALREADY_EXIST_ERROR'}, status=400)
+            
+            if not start_day < end_day:
+                return JsonResponse({'message': 'RECHECK_DATE_ERROR'}, status=400)
+
+            if not User.objects.filter(name=data['mentor_name'], user_type_id=1).exists():
+                return JsonResponse({'message': 'RECHECK_MENTOR_NAME_ERROR'}, status=400)
+            
+            Batch.objects.create(id=int(data['name']), name=str(data['name']), 
+                                start_day=data['start_day'], end_day=data['end_day'],
+                                mentor_name=data['mentor_name'])
+
+            return JsonResponse({'message': 'SUCCESS'}, status=201)
+        
+        except json.JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+
+        except ValueError:
+            return JsonResponse({'message': 'DATE_FORM_ERROR'}, status=400)
+
+class ModifyBatchView(View):
+    def patch(self, request, batch_id):
+        try:
+            data      = json.loads(request.body)
+            start_day = time.strptime(data['start_day'], "%Y-%m-%d")
+            end_day   = time.strptime(data['end_day'], "%Y-%m-%d")
+
+            if not batch_id == int(data['new_batch_name']) and \
+                Batch.objects.filter(name=str(data['new_batch_name'])).exists():
+                return JsonResponse({'message': 'ALREADY_EXIST_ERROR'}, status=400)
+
+            if not start_day < end_day:
+                return JsonResponse({'message': 'RECHECK_DATE_ERROR'}, status=400)
+
+            if not User.objects.filter(name=data['mentor_name'], user_type_id=1).exists():
+                return JsonResponse({'message': 'RECHECK_MENTOR_NAME_ERROR'}, status=400)
+            
+            batch             = Batch.objects.get(id=batch_id)
+            batch.id          = int(data['new_batch_name']) if data['new_batch_name'] else batch.id
+            batch.name        = str(data['new_batch_name']) if data['new_batch_name'] else batch.name
+            batch.start_day   = data['start_day'] if data['start_day'] else batch.start_day
+            batch.end_day     = data['end_day'] if data['end_day'] else batch.end_day
+            batch.mentor_name = data['mentor_name'] if data['mentor_name'] else batch.mentor_name
+            batch.save()
+
+            if data['new_batch_name'] and not batch_id == int(data['new_batch_name']):
+                Batch.objects.get(id=batch_id).delete()
+
+            return JsonResponse({'message': 'SUCCESS'}, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+
+        except ValueError:
+            return JsonResponse({'message': 'DATE_FORM_ERROR'}, status=400)
+
+    def delete(self, request, batch_id):
+        if User.objects.filter(batch_id=batch_id).exists():
+            return JsonResponse({'message': 'ALREADY_USED_ERROR'}, status=204)
+        Batch.objects.get(id=batch_id).delete()
+
+        return JsonResponse({'message': 'SUCCESS'}, status=204)
