@@ -4,6 +4,7 @@ import datetime
 from django.http     import JsonResponse
 from django.views    import View
 
+from records.models  import Record
 from utils.decorator import login_required
 from utils.check_ip  import check_ip
 
@@ -58,3 +59,27 @@ class RecordCheckView(View):
 
         except json.JSONDecodeError:
             return JsonResponse({'message': 'JSON_DECODE_ERROR'}, status=400)
+
+class RecordStartTimeView(View):
+    @login_required
+    @check_ip
+    def post(self, request):
+        user      = request.user
+        record    = user.record_set.last()
+        now       = datetime.datetime.now()
+        time_gap  = datetime.timedelta(seconds=32406)
+        now_korea = now + time_gap
+        
+        if record:
+            if now_korea.date() == record.start_at.date():
+                return JsonResponse({'message': 'ALREADY_RECORD_ERROR'}, status=400)
+
+        Record.objects.create(user_id=user.id, start_at=now_korea)
+
+        result = {
+                    'user_id'   : user.id,
+                    'user_name' : user.name,
+                    'start_at'  : str(now_korea.time())
+        }
+
+        return JsonResponse({'result': result}, status=201)
