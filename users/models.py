@@ -12,7 +12,6 @@ class User(models.Model):
     github            = models.CharField(max_length=500, null=True)
     birthday          = models.DateField(null=True)
     total_time        = models.IntegerField(default=0)
-    deleted           = models.BooleanField(default=False)
     created_at        = models.DateTimeField(auto_now_add=True)
     updated_at        = models.DateTimeField(auto_now=True)
 

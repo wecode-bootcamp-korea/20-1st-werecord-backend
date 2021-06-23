@@ -123,7 +123,6 @@ class UserInfoView(View):
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)     
 
-
     @login_required
     def delete(self, request):
         
@@ -188,8 +187,10 @@ class StudentView(View):
                     'record_information' : {
                                 'weekly_record'            : full_weekly_record,
                                 'total_accumulate_records' : total_accumulate_record_result,
-                                'average_start_time'       : str(datetime.timedelta(seconds=start_sum/start_count)),
-                                'average_end_time'         : str(datetime.timedelta(seconds=end_sum/end_count)),
+                                'average_start_time'       : str(datetime.timedelta(seconds=start_sum/start_count)) \
+                                                                if not start_count == 0 else 0,
+                                'average_end_time'         : str(datetime.timedelta(seconds=end_sum/end_count)) \
+                                                                if not end_count == 0 else 0,
                                 'wecode_d_day'             : (now_korea.date()-user.batch.start_day).days
 
                     }
@@ -207,7 +208,8 @@ class BatchView(View):
 
         my_batch        = Batch.objects.get(id=batch_id)
         my_batch_users  = User.objects.filter(batch_id=my_batch.id)
-        my_batch_mentor = User.objects.get(name=my_batch.mentor_name, user_type_id=1)
+        my_batch_mentor = User.objects.get(name=my_batch.mentor_name, user_type_id=1) \
+                            if User.objects.filter(name=my_batch.mentor_name, user_type_id=1).exists() else None
         now             = datetime.datetime.now()
         time_gap        = datetime.timedelta(seconds=32406)
         now_korea       = now + time_gap
@@ -280,17 +282,22 @@ class BatchView(View):
                                 ],
                                 'mentor' : 
                                         {
-                                            'mentor_id'                : my_batch_mentor.id,
-                                            'mentor_name'              : my_batch_mentor.name,
-                                            'mentor_profile_image_url' : my_batch_mentor.profile_image_url,
-                                            'mentor_position'          : my_batch_mentor.position.name,
-                                            'mentor_email'             : my_batch_mentor.email,
+                                            'mentor_id'                : my_batch_mentor.id \
+                                                                            if my_batch_mentor else None,
+                                            'mentor_name'              : my_batch_mentor.name \
+                                                                            if my_batch_mentor else my_batch.mentor_name,
+                                            'mentor_profile_image_url' : my_batch_mentor.profile_image_url \
+                                                                            if my_batch_mentor else None,
+                                            'mentor_position'          : my_batch_mentor.position.name \
+                                                                            if my_batch_mentor else None,
+                                            'mentor_email'             : my_batch_mentor.email \
+                                                                            if my_batch_mentor else None,
                                             'mentor_blog'              : my_batch_mentor.blog \
-                                                                        if my_batch_mentor.blog else None,
+                                                                            if my_batch_mentor else None,
                                             'mentor_github'            : my_batch_mentor.github \
-                                                                        if my_batch_mentor.github else None,
+                                                                            if my_batch_mentor else None,
                                             'mentor_birthday'          : my_batch_mentor.birthday \
-                                                                        if my_batch_mentor.birthday else None
+                                                                            if my_batch_mentor else None
                                         }
                     }
         }
