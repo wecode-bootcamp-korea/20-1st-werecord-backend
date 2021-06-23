@@ -43,9 +43,10 @@ class GoogleLoginView(View):
         )
 
         user_info = {
+            "user_id"          : login_user.google_login_id if created == False else "",
             'user_type'        : login_user.user_type.name if login_user.user_type else "",
             'batch'            : login_user.batch.name if login_user.batch else "",
-            "email"           : user_info.get('email') if user_info.get('email') else "",
+            "email"            : user_info.get('email') if user_info.get('email') else "",
             "profile_image_url": user_info.get('picture') if user_info.get('picture') else "",
         }
 
@@ -99,6 +100,9 @@ class UserInfoView(View):
                     }
                 )
 
+                s3 = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key= AWS_SECRET_ACCESS_KEY)
+                s3.Object("werecord", user.profile_image_url[49:]).delete()
+
                 image_url = "https://werecord.s3.ap-northeast-2.amazonaws.com/" + my_uuid
             
             user.profile_image_url = image_url
@@ -106,7 +110,7 @@ class UserInfoView(View):
             user.name              = data.get("name")
             user.email             = data.get("email") if data.get("email") else user.email
             user.user_type         = UserType.objects.get(name = data.get('user_type'))
-            user.batch             = Batch.objects.get(name = data.get("batch"))
+            user.batch             = Batch.objects.get(name = data.get("batch")) if data.get("batch") else None
             user.position          = Position.objects.get(name = data.get("position"))
             user.blog              = data.get("blog")
             user.github            = data.get("github")
@@ -115,7 +119,7 @@ class UserInfoView(View):
 
             user_info = {
                 'user_type' : user.user_type.name,
-                'batch'     : user.batch.name
+                'batch'     : user.batch.name if user.batch else ''
             }
 
             return JsonResponse({'user_info': user_info, 'message': 'SUCCESS'}, status =201)
@@ -125,7 +129,10 @@ class UserInfoView(View):
 
     @login_required
     def delete(self, request):
-        
+
+        s3 = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key= AWS_SECRET_ACCESS_KEY)
+        s3.Object("werecord", request.user.profile_image_url[49:]).delete()
+
         request.user.delete()
         
         return JsonResponse({"message": "SUCCESS"}, status=204)  
