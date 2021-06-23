@@ -45,7 +45,7 @@ class GoogleLoginView(View):
         user_info = {
             'user_type'        : login_user.user_type.name if login_user.user_type else "",
             'batch'            : login_user.batch.name if login_user.batch else "",
-            "email'"           : user_info.get('email') if user_info.get('email') else "",
+            "email"           : user_info.get('email') if user_info.get('email') else "",
             "profile_image_url": user_info.get('picture') if user_info.get('picture') else "",
         }
 
@@ -66,9 +66,9 @@ class UserInfoView(View):
         data  = {
                 'profile_image_url': user.profile_image_url,
                 'name'             : user.name,
-                'user_type'        : user.user_type.name,
-                'batch'            : user.batch.name,
-                'position'         : user.position.name,
+                'user_type'        : user.user_type.name if user.user_type else "",
+                'batch'            : user.batch.name if user.batch else "",
+                'position'         : user.position.name if user.position else "",
                 'blog'             : user.blog,
                 'github'           : user.github,
                 'birthday'         : user.birthday,
@@ -79,12 +79,13 @@ class UserInfoView(View):
     def post(self, request):
         try:
             data = json.loads(request.POST['info'])
+
             user = request.user 
 
             image = request.FILES.get('image')
 
             if image is None:
-                image_url = user.profile_image_url
+                image_url = data.get("profile_image_url") if data.get("profile_image_url") else user.profile_image_url
 
             else:
                 my_uuid    = str(uuid.uuid4())
@@ -97,21 +98,20 @@ class UserInfoView(View):
                         "ContentType": image.content_type
                     }
                 )
-        
+
                 image_url = "https://werecord.s3.ap-northeast-2.amazonaws.com/" + my_uuid
+            
+            user.profile_image_url = image_url
 
-            User.objects.filter(id = request.user.id).update(
-                profile_image_url = image_url,
-                name              = data.get('name'),
-                user_type         = UserType.objects.get(name = data.get('user_type')),
-                batch             = Batch.objects.get(name = data.get("batch")),
-                position          = Position.objects.get(name = data.get("position")),
-                blog              = data.get("blog"),
-                github            = data.get("github"),
-                birthday          = data.get("birthday") if data.get("birthday") is not "" else None
-            )
-
-            user = User.objects.get(id = request.user.id)
+            user.name              = data.get("name")
+            user.email             = data.get("email") if data.get("email") else user.email
+            user.user_type         = UserType.objects.get(name = data.get('user_type'))
+            user.batch             = Batch.objects.get(name = data.get("batch"))
+            user.position          = Position.objects.get(name = data.get("position"))
+            user.blog              = data.get("blog")
+            user.github            = data.get("github")
+            user.birthday          = data.get("birthday") if data.get("birthday") != "" else None
+            user.save()
 
             user_info = {
                 'user_type' : user.user_type.name,
@@ -123,12 +123,13 @@ class UserInfoView(View):
         except KeyError:
             return JsonResponse({"message": "KEY_ERROR"}, status=400)     
 
+
     @login_required
     def delete(self, request):
         
         request.user.delete()
         
-        return JsonResponse({"message": "SUCCESS"}, status=204)
+        return JsonResponse({"message": "SUCCESS"}, status=204)  
 
 class StudentView(View):
     @login_required
