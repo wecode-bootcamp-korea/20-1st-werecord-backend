@@ -315,7 +315,7 @@ class BatchListView(View):
     @login_required
     def get(self, request):
         user    = request.user
-        batches = Batch.objects.all().order_by('-name')
+        batches = Batch.objects.all().order_by('-id')
         
         if not user.user_type.id == 1:
             return JsonResponse({'message': 'UNAUTHORIZED_USER_ERROR'}, status = 400)
@@ -331,6 +331,9 @@ class BatchListView(View):
             user_total_times = []
             users            = User.objects.filter(batch_id=batch.id)
 
+            batch_mentor = User.objects.get(name=batch.mentor_name, user_type_id=1) \
+                            if User.objects.filter(name=batch.mentor_name, user_type_id=1).exists() else None
+
             for user in users:
                 user_total_times.append(user.total_time)
                 if not user.record_set.last():
@@ -343,8 +346,8 @@ class BatchListView(View):
             result = {
                         'batch_id'                : batch.id,
                         'batch_name'              : batch.name,
-                        'mentor_id'               : User.objects.get(name=batch.mentor_name).id,
-                        'mentor_name'             : User.objects.get(name=batch.mentor_name).name,
+                        'mentor_id'               : batch_mentor.id if batch_mentor else None,
+                        'mentor_name'             : batch_mentor.name if batch_mentor else batch.mentor_name,
                         'batch_start_day'         : batch.start_day,
                         'batch_end_day'           : batch.end_day,
                         'batch_total_time'        : sum(user_total_times),
