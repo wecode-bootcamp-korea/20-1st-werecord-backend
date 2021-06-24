@@ -101,7 +101,9 @@ class UserInfoView(View):
                 )
 
                 s3 = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key= AWS_SECRET_ACCESS_KEY)
-                s3.Object("werecord", user.profile_image_url[49:]).delete()
+                s3_image = s3.Object("werecord", user.profile_image_url[49:])
+                if s3_image.key:
+                    s3_image.delete()
 
                 image_url = "https://werecord.s3.ap-northeast-2.amazonaws.com/" + my_uuid
             
@@ -131,7 +133,9 @@ class UserInfoView(View):
     def delete(self, request):
 
         s3 = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key= AWS_SECRET_ACCESS_KEY)
-        s3.Object("werecord", request.user.profile_image_url[49:]).delete()
+        s3_image = s3.Object("werecord", request.user.profile_image_url[49:])
+        if s3_image.key:
+            s3_image.delete()
 
         request.user.delete()
         
