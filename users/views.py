@@ -11,6 +11,7 @@ from datetime          import date
 
 from django.views      import View
 from django.http       import JsonResponse
+from django.core.mail  import EmailMessage
 
 from my_settings       import SECRET, ALGORITHM, JWT_DURATION_SEC
 from werecord.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
@@ -110,7 +111,15 @@ class UserInfoView(View):
             user.profile_image_url = image_url
 
             user.name              = data.get("name")
-            user.email             = data.get("email") if data.get("email") else user.email
+            user.email             = data.get("email") and EmailMessage(
+                    f'👉{data.get("name")}님 안녕하세요. werecord입니다',
+                    f'{data.get("name")}님 안녕하세요. werecord입니다.\n'
+                    'wrecord에 오신걸 환영합니다.🤗\n\n'
+                    'werecord는 위워크에서 보냈던시간을 기록하는 사이트입니다.💻\n'
+                    'werecord와 함께 위코드에 있는 시간을 기록해보세요!✍️\n'
+                    f'3개월 뒤의 달라진 {data.get("name")}님을 기원합니다!🙏',
+                    to=[data.get("email")]
+                ).send()if data.get("email") else user.email
             user.user_type         = UserType.objects.get(name = data.get('user_type'))
             user.batch             = Batch.objects.get(name = data.get("batch")) if data.get("batch") else None
             user.position          = Position.objects.get(name = data.get("position"))
