@@ -31,7 +31,8 @@ class RecordCheckView(View):
         }
     
         return JsonResponse({'result': result}, status=200)
-
+        
+    @login_required
     @check_ip
     def post(self, request):
         try:
