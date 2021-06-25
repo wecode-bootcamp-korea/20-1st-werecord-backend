@@ -430,7 +430,7 @@ class ModifyBatchView(View):
 
     def delete(self, request, batch_id):
         if User.objects.filter(batch_id=batch_id).exists():
-            return JsonResponse({'message': 'ALREADY_USED_ERROR'}, status=204)
+            return JsonResponse({'message': 'ALREADY_USED_ERROR'}, status=400)
         Batch.objects.get(id=batch_id).delete()
 
         return JsonResponse({'message': 'SUCCESS'}, status=204)
