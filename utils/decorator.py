@@ -1,8 +1,9 @@
 import jwt
+import datetime
 
 from django.http  import JsonResponse
 
-from my_settings  import SECRET, ALGORITHM
+from my_settings  import SECRET, ALGORITHM, ACCESS_EXPIRATION_DELTA
 
 from users.models import User
 
@@ -21,6 +22,11 @@ def login_required(func):
                     )
 
             user = User.objects.get(id = werecord_token_payload['user_id'])
+
+            now = datetime.datetime.now().timestamp()
+            if now > werecord_token_payload['iat'] + ACCESS_EXPIRATION_DELTA:
+                return JsonResponse({'message': 'werecord_token_expired'}, status=401)
+
             request.user = user
 
             return func(self, request, *args, **kwargs)
