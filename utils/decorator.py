@@ -25,17 +25,15 @@ def login_required(func):
 
             now = datetime.datetime.now().timestamp()
             if now > werecord_token_payload['iat'] + ACCESS_EXPIRATION_DELTA:
-                return JsonResponse({'message': 'werecord_token_expired'}, status=401)
+                return JsonResponse({'message': 'WERECORD_TOKEN_EXPIRED'}, status=401)
 
             request.user = user
 
             return func(self, request, *args, **kwargs)
 
-        # 토큰 비정상
         except jwt.DecodeError:
             return JsonResponse({'message': 'INVALID_JWT'}, status=401)
 
-        # 익명의 사용자
         except User.DoesNotExist:
             return JsonResponse({'message': 'INVALID_USER'}, status=401)
     return wrapper
