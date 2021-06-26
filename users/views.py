@@ -1,7 +1,6 @@
 import json
 import jwt
 import requests
-import time
 import datetime
 import boto3
 import uuid
@@ -12,7 +11,7 @@ from datetime          import date
 from django.views      import View
 from django.http       import JsonResponse
 
-from my_settings       import SECRET, ALGORITHM, JWT_DURATION_SEC
+from my_settings       import SECRET, ALGORITHM
 from werecord.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 from users.models      import User, UserType, Batch, Position
 from utils.decorator   import login_required 
@@ -37,8 +36,7 @@ class GoogleLoginView(View):
         werecord_token = jwt.encode(
                 {
                     'user_id'  : login_user.id,
-                    'iat'      : int(time.time()),
-                    'exp'      : int(time.time()) + JWT_DURATION_SEC
+                    'iat'      : datetime.datetime.now().timestamp()
                 }, SECRET['secret'],ALGORITHM
         )
 
