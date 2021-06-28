@@ -217,7 +217,7 @@ class BatchView(View):
             return JsonResponse({'message': 'NOT_YOUR_BATCH_ERROR'}, status = 400)
 
         my_batch        = Batch.objects.get(id=batch_id)
-        my_batch_users  = User.objects.filter(batch_id=my_batch.id)
+        my_batch_users  = User.objects.filter(batch_id=my_batch.id).order_by('name')
         my_batch_mentor = User.objects.get(name=my_batch.mentor_name, user_type_id=1) \
                             if User.objects.filter(name=my_batch.mentor_name, user_type_id=1).exists() else None
         now             = datetime.datetime.now()
