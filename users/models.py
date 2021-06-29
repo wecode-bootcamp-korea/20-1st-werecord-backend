@@ -11,6 +11,8 @@ class User(models.Model):
     blog              = models.CharField(max_length=500, null=True)
     github            = models.CharField(max_length=500, null=True)
     birthday          = models.DateField(null=True)
+    average_start     = models.TimeField(null=True)
+    average_end       = models.TimeField(null=True)
     total_time        = models.IntegerField(default=0)
     created_at        = models.DateTimeField(auto_now_add=True)
     updated_at        = models.DateTimeField(auto_now=True)
@@ -35,6 +37,7 @@ class Batch(models.Model):
     start_day   = models.DateField()
     end_day     = models.DateField()
     mentor_name = models.CharField(max_length=50)
+    total_time  = models.IntegerField(default=0)
 
     class Meta:
         db_table = "batches"
