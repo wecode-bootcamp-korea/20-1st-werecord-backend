@@ -216,21 +216,13 @@ class BatchView(View):
         if user.user_type_id == 2 and not user.batch.id == batch_id:
             return JsonResponse({'message': 'NOT_YOUR_BATCH_ERROR'}, status = 400)
 
+        winner_batch    = Batch.objects.all().order_by('-total_time').first()
         my_batch        = Batch.objects.get(id=batch_id)
         my_batch_users  = User.objects.filter(batch_id=my_batch.id).order_by('name')
         my_batch_mentor = User.objects.get(name=my_batch.mentor_name, user_type_id=1) \
                             if User.objects.filter(name=my_batch.mentor_name, user_type_id=1).exists() else None
-        now             = datetime.datetime.now()
-        time_gap        = datetime.timedelta(seconds=32406)
-        now_korea       = now + time_gap
-
-        all_batches       = Batch.objects.all()
-        batch_total_times = []
-        for batch in all_batches:
-            batch_users = User.objects.filter(batch_id=batch.id)
-            batch_total_times.append(sum([user.total_time for user in batch_users]))
-        winner_total_time = max(batch_total_times)
-
+        now_korea       = datetime.datetime.now() + datetime.timedelta(seconds=32406)
+        
         GOST_RANKING = 3
 
         today               = now_korea.isocalendar()
@@ -242,41 +234,36 @@ class BatchView(View):
             records              = user.record_set.filter(end_at__date__range=[last_week_start_day, last_week_end_day])
             last_week_total_time = 0
             for record in records:
-                last_week_total_time += record.oneday_time
+                last_week_total_time += record.oneday_time if record.oneday_time else 0
             compare_times.append(last_week_total_time)
         
         ranking_results = []
-        if sum(compare_times) == 0:
-            ranking_results = []
+        if len(compare_times) < GOST_RANKING:
+            ranking_times = sorted(compare_times, reverse=True)
         else:
-            if len(compare_times) < GOST_RANKING:
-                ranking_times = sorted(compare_times, reverse=True)
-            else:
-                ranking_times = sorted(compare_times, reverse=True)[:GOST_RANKING]
+            ranking_times = sorted(compare_times, reverse=True)[:GOST_RANKING]
 
-            for ranking_time in ranking_times:
+        for ranking_time in ranking_times:
+            if not ranking_time == 0:
                 user_informaion = {}
                 index_number = compare_times.index(ranking_time)
                 user_informaion['user_id']                   = my_batch_users[index_number].id
                 user_informaion['user_name']                 = my_batch_users[index_number].name
-                user_informaion['user_profile_image_url']    = my_batch_users[index_number].profile_image_url
                 user_informaion['user_last_week_total_time'] = ranking_time
                 ranking_results.append(user_informaion)
         
         result = {
                     'winner_batch_information' : {
-                                'winner_batch_name'       : all_batches[batch_total_times.index(winner_total_time)].name,
-                                'winner_batch_total_time' : winner_total_time
+                                'winner_batch_name'       : winner_batch.name,
+                                'winner_batch_total_time' : winner_batch.total_time
                     },
                     'my_batch_information' : {
                                 'batch_id'         : my_batch.id,
                                 'batch_name'       : my_batch.name,
-                                'batch_total_time' : sum([user.total_time for user in my_batch_users]),
+                                'batch_total_time' : my_batch.total_time,
                                 'ghost_ranking'    : ranking_results,
                                 'peers' : [
                                         {
-                                            'batch_id'               : my_batch.id,
-                                            'batch_name'             : my_batch.name,
                                             'peer_id'                : user.id,
                                             'peer_name'              : user.name,
                                             'peer_profile_image_url' : user.profile_image_url,
@@ -286,28 +273,20 @@ class BatchView(View):
                                             'peer_github'            : user.github if user.github else None,
                                             'peer_birthday'          : user.birthday if user.birthday else None,
                                             'peer_status'            : False if not user.record_set.last() \
-                                                else True if now_korea.date() == user.record_set.last().start_at.date() \
-                                                and not user.record_set.last().end_at else False,
+                                                                        else True if now_korea.date() == user.record_set.last().start_at.date() \
+                                                                        and not user.record_set.last().end_at else False,
                                         } for user in my_batch_users
                                 ],
                                 'mentor' : 
                                         {
-                                            'mentor_id'                : my_batch_mentor.id \
-                                                                            if my_batch_mentor else None,
-                                            'mentor_name'              : my_batch_mentor.name \
-                                                                            if my_batch_mentor else my_batch.mentor_name,
-                                            'mentor_profile_image_url' : my_batch_mentor.profile_image_url \
-                                                                            if my_batch_mentor else None,
-                                            'mentor_position'          : my_batch_mentor.position.name \
-                                                                            if my_batch_mentor else None,
-                                            'mentor_email'             : my_batch_mentor.email \
-                                                                            if my_batch_mentor else None,
-                                            'mentor_blog'              : my_batch_mentor.blog \
-                                                                            if my_batch_mentor else None,
-                                            'mentor_github'            : my_batch_mentor.github \
-                                                                            if my_batch_mentor else None,
-                                            'mentor_birthday'          : my_batch_mentor.birthday \
-                                                                            if my_batch_mentor else None
+                                            'mentor_id'                : my_batch_mentor.id if my_batch_mentor else None,
+                                            'mentor_name'              : my_batch_mentor.name if my_batch_mentor else my_batch.mentor_name,
+                                            'mentor_profile_image_url' : my_batch_mentor.profile_image_url if my_batch_mentor else None,
+                                            'mentor_position'          : my_batch_mentor.position.name if my_batch_mentor else None,
+                                            'mentor_email'             : my_batch_mentor.email if my_batch_mentor else None,
+                                            'mentor_blog'              : my_batch_mentor.blog if my_batch_mentor else None,
+                                            'mentor_github'            : my_batch_mentor.github if my_batch_mentor else None,
+                                            'mentor_birthday'          : my_batch_mentor.birthday if my_batch_mentor else None
                                         }
                     }
         }
