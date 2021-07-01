@@ -31,7 +31,8 @@ class GoogleLoginView(View):
             return JsonResponse({'message': 'INVALID_TOKEN'}, status=401)
 
         login_user, created = User.objects.get_or_create(
-            google_login_id   = user_info['sub'],
+            google_login_id = user_info['sub'],
+            email           = user_info['email']
         )
 
         werecord_token = jwt.encode(
@@ -41,12 +42,20 @@ class GoogleLoginView(View):
                 }, SECRET['secret'],ALGORITHM
         )
 
+        email_check = 'gracefulrain.co'
+        
+        if user_info['email'][-15:] == email_check:
+            login_user.user_type = UserType.objects.get(name = '멘토')
+        
+        else:
+            login_user.user_type = UserType.objects.get(name = '수강생')
+
         user_info = {
             "user_id"          : login_user.google_login_id if created == False else "",
             'user_type'        : login_user.user_type.name if login_user.user_type else "",
             'batch'            : login_user.batch.name if login_user.batch else "",
-            "email"            : user_info.get('email') if user_info.get('email') else "",
             "profile_image_url": user_info.get('picture') if user_info.get('picture') else "",
+            'new_user'         : True if not login_user.name else False
         }
 
         return JsonResponse({'user_info' : user_info, 'werecord_token' : werecord_token}, status=200)
@@ -109,7 +118,6 @@ class UserInfoView(View):
             user.profile_image_url = image_url
 
             user.name              = data.get("name")
-            user.email             = data.get("email") if data.get("email") else user.email
             user.user_type         = UserType.objects.get(name = data.get('user_type'))
             user.batch             = Batch.objects.get(name = data.get("batch")) if data.get("batch") else None
             user.position          = Position.objects.get(name = data.get("position"))
