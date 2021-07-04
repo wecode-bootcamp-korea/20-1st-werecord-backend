@@ -8,6 +8,7 @@ import uuid
 
 from json.decoder      import JSONDecodeError
 from datetime          import date
+from enum              import IntEnum
 
 from django.views      import View
 from django.http       import JsonResponse
@@ -148,6 +149,10 @@ class UserInfoView(View):
         
         return JsonResponse({"message": "SUCCESS"}, status=204)  
 
+class Number(IntEnum):
+    WEEK_DAYS    = 5
+    GOST_RANKING = 3
+
 class StudentView(View):
     @login_required
     def get(self, request):
@@ -156,34 +161,37 @@ class StudentView(View):
         if not user.user_type.id == 2:
             return JsonResponse({'message': 'UNAUTHORIZED_USER_ERROR'}, status = 400)
 
-        user      = User.objects.select_related('batch').prefetch_related('record_set').get(id=user.id)
-        records   = user.record_set.all()
-        now_korea = datetime.datetime.now() + datetime.timedelta(seconds=32406)
+        user       = User.objects.select_related('batch').prefetch_related('record_set','dailyrecord_set').get(id=user.id)
+        record     = user.record_set.last()
+        records    = user.dailyrecord_set.all()
+        now_korea  = datetime.datetime.now() + datetime.timedelta(seconds=32406)
+        check_date = record.start_at.date() if record else None
+        check_stop = user.dailyrecord_set.last()
 
-        WEEK_DAYS = 5
-
-        today          = now_korea.isocalendar()
-        week_start_day = date.fromisocalendar(today.year, today.week, 1)
+        week_start_day = date.fromisocalendar(now_korea.isocalendar().year, now_korea.isocalendar().week, 1)
         week_end_day   = week_start_day + datetime.timedelta(days=6)
-        week_records   = records.filter(end_at__date__range=[week_start_day, week_end_day])
+        week_records   = records.filter(date__range=[week_start_day, week_end_day])
 
-        week_oneday_time       = {f'{record.end_at.weekday()}': record.oneday_time for record in week_records}
-        total_week_oneday_time = {week_number : week_oneday_time[str(week_number)] \
-                                if str(week_number) in week_oneday_time.keys() else 0 for week_number in range(WEEK_DAYS)}
+        daily_total_times       = {f'{record.date.weekday()}': record.total_time for record in week_records}
+        total_week_oneday_time = {week_number : daily_total_times[str(week_number)] \
+                                if str(week_number) in daily_total_times.keys() else 0 for week_number in range(Number.WEEK_DAYS)}
                     
         total_accumulate_record_result = []
         oneday_time_sum = 0
-        for record in records:
-            if record.end_at:
-                oneday_time_sum += record.oneday_time
-                total_accumulate_record_result.append(oneday_time_sum)
+        for each_record in records:
+            oneday_time_sum += each_record.total_time
+            total_accumulate_record_result.append(oneday_time_sum)
 
         result = {
                     'user_information' : {
                                 'user_id'                : user.id,
                                 'user_name'              : user.name,
                                 'user_profile_image_url' : user.profile_image_url,
-                                'user_total_time'        : user.total_time
+                                'user_total_time'        : user.total_time,
+                                'user_start_time'        : None if not record else record.start_at.time() \
+                                                            if now_korea.date() == record.start_at.date() and not record.end_at else None,
+                                'start_status'           : False if not record else True if now_korea.date() == check_date else False,
+                                'stop_status'            : False if not check_stop else True if now_korea.date() == check_stop.date else False
                     },
                     'record_information' : {
                                 'weekly_record'            : total_week_oneday_time,
@@ -211,8 +219,6 @@ class BatchView(View):
         my_batch_mentor = User.objects.get(name=my_batch.mentor_name, user_type_id=1) \
                             if User.objects.filter(name=my_batch.mentor_name, user_type_id=1).exists() else None
         now_korea       = datetime.datetime.now() + datetime.timedelta(seconds=32406)
-        
-        GOST_RANKING = 3
 
         today               = now_korea.isocalendar()
         last_week_start_day = date.fromisocalendar(today.year, today.week-1, 1)
@@ -220,17 +226,17 @@ class BatchView(View):
 
         compare_times = []
         for user in my_batch_users:
-            records              = user.record_set.filter(end_at__date__range=[last_week_start_day, last_week_end_day])
+            records              = user.dailyrecord_set.filter(date__range=[last_week_start_day, last_week_end_day])
             last_week_total_time = 0
             for record in records:
-                last_week_total_time += record.oneday_time if record.oneday_time else 0
+                last_week_total_time += record.total_time if record.total_time else 0
             compare_times.append(last_week_total_time)
         
         ranking_results = []
-        if len(compare_times) < GOST_RANKING:
+        if len(compare_times) < Number.GOST_RANKING:
             ranking_times = sorted(compare_times, reverse=True)
         else:
-            ranking_times = sorted(compare_times, reverse=True)[:GOST_RANKING]
+            ranking_times = sorted(compare_times, reverse=True)[:Number.GOST_RANKING]
 
         for ranking_time in ranking_times:
             if not ranking_time == 0:
