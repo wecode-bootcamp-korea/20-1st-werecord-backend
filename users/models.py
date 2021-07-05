@@ -16,6 +16,7 @@ class User(models.Model):
     total_time        = models.IntegerField(default=0)
     created_at        = models.DateTimeField(auto_now_add=True)
     updated_at        = models.DateTimeField(auto_now=True)
+    refresh_token     = models.CharField(max_length=1000, null=True)
 
     class Meta:
         db_table = "users"
