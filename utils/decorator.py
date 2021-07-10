@@ -27,7 +27,7 @@ def login_required(func):
                 refresh_token_payload = jwt.decode(
                         user.refresh_token,
                         SECRET['secret'],
-                        algorithms="HS256"
+                        ALGORITHM
                         )
         
                 if now > refresh_token_payload['iat'] + REFRESH_EXPIRATION_DELTA:
@@ -40,7 +40,7 @@ def login_required(func):
                             'iat'    : datetime.datetime.now().timestamp()
                         },
                         SECRET['secret'],
-                        algorithm = 'HS256'
+                        ALGORITHM
                         )
                     return JsonResponse({'message': 'WERECORD_TOKEN_REFRESHED', 'WERECORD_TOKEN': werecord_token}, status=401)
     
