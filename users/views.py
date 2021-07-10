@@ -213,15 +213,13 @@ class BatchView(View):
         if user.user_type_id == 2 and not user.batch.id == batch_id:
             return JsonResponse({'message': 'NOT_YOUR_BATCH_ERROR'}, status = 400)
 
-        winner_batch    = Batch.objects.all().order_by('-total_time').first()
-        my_batch        = Batch.objects.get(id=batch_id)
-        my_batch_users  = User.objects.filter(batch_id=my_batch.id).order_by('name')
-        my_batch_mentor = User.objects.get(name=my_batch.mentor_name, user_type_id=1) \
-                            if User.objects.filter(name=my_batch.mentor_name, user_type_id=1).exists() else None
-        now_korea       = datetime.datetime.now() + datetime.timedelta(seconds=32406)
-
-        today               = now_korea.isocalendar()
-        last_week_start_day = date.fromisocalendar(today.year, today.week-1, 1)
+        winner_batch        = Batch.objects.all().order_by('-total_time').first()
+        my_batch            = Batch.objects.get(id=batch_id)
+        my_batch_users      = User.objects.filter(batch_id=my_batch.id).order_by('name')
+        my_batch_mentor     = User.objects.get(name=my_batch.mentor_name, user_type_id=1) \
+                                if User.objects.filter(name=my_batch.mentor_name, user_type_id=1).exists() else None
+        now_korea           = datetime.datetime.now() + datetime.timedelta(seconds=32406)
+        last_week_start_day = date.fromisocalendar(now_korea.isocalendar().year, now_korea.isocalendar().week-1, 1)
         last_week_end_day   = last_week_start_day + datetime.timedelta(days=6)
 
         compare_times = []
