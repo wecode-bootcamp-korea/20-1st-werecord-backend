@@ -43,8 +43,17 @@ class GoogleLoginView(View):
                 }, SECRET['secret'],ALGORITHM
         )
 
+        refresh_token = jwt.encode(
+                {
+                    'user_id': login_user.id,
+                    'iat'    : datetime.datetime.now().timestamp()
+                },
+                SECRET['secret'], ALGORITHM
+        )
+        login_user.refresh_token = refresh_token
+        login_user.save()
+
         email_check = 'gracefulrain.co'
-        
         if user_info['email'][-15:] == email_check:
             login_user.user_type = UserType.objects.get(name = '멘토')
         
@@ -52,10 +61,9 @@ class GoogleLoginView(View):
             login_user.user_type = UserType.objects.get(name = '수강생')
 
         user_info = {
-            "user_id"          : login_user.google_login_id if created == False else "",
             'user_type'        : login_user.user_type.name if login_user.user_type else "",
             'batch'            : login_user.batch.name if login_user.batch else "",
-            "profile_image_url": user_info.get('picture') if user_info.get('picture') else "",
+            'profile_image_url': user_info.get('picture') if user_info.get('picture') else "",
             'new_user'         : True if not login_user.name else False
         }
 
@@ -95,36 +103,36 @@ class UserInfoView(View):
             image = request.FILES.get('image')
 
             if image is None:
-                image_url = data.get("profile_image_url") if data.get("profile_image_url") else user.profile_image_url
+                image_url = data.get('profile_image_url') if data.get('profile_image_url') else user.profile_image_url
 
             else:
                 my_uuid    = str(uuid.uuid4())
 
                 self.s3_client.upload_fileobj(
                     image,
-                    "werecord",
+                    'werecord',
                     my_uuid,
                     ExtraArgs={
-                        "ContentType": image.content_type
+                        'ContentType': image.content_type
                     }
                 )
 
                 s3 = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key= AWS_SECRET_ACCESS_KEY)
-                s3_image = s3.Object("werecord", user.profile_image_url[49:])
+                s3_image = s3.Object('werecord', user.profile_image_url[49:])
                 if s3_image.key:
                     s3_image.delete()
 
-                image_url = "https://werecord.s3.ap-northeast-2.amazonaws.com/" + my_uuid
+                image_url = 'https://werecord.s3.ap-northeast-2.amazonaws.com/' + my_uuid
             
             user.profile_image_url = image_url
 
-            user.name              = data.get("name")
+            user.name              = data.get('name')
             user.user_type         = UserType.objects.get(name = data.get('user_type'))
-            user.batch             = Batch.objects.get(name = data.get("batch")) if data.get("batch") else None
-            user.position          = Position.objects.get(name = data.get("position"))
-            user.blog              = data.get("blog")
-            user.github            = data.get("github")
-            user.birthday          = data.get("birthday") if data.get("birthday") != "" else None
+            user.batch             = Batch.objects.get(name = data.get('batch')) if data.get('batch') else None
+            user.position          = Position.objects.get(name = data.get('position'))
+            user.blog              = data.get('blog')
+            user.github            = data.get('github')
+            user.birthday          = data.get('birthday') if data.get('birthday') != "" else None
             user.save()
 
             user_info = {
@@ -135,19 +143,19 @@ class UserInfoView(View):
             return JsonResponse({'user_info': user_info, 'message': 'SUCCESS'}, status =201)
             
         except KeyError:
-            return JsonResponse({"message": "KEY_ERROR"}, status=400)     
+            return JsonResponse({'message': 'KEY_ERROR'}, status=400)     
 
     @login_required
     def delete(self, request):
 
         s3 = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key= AWS_SECRET_ACCESS_KEY)
-        s3_image = s3.Object("werecord", request.user.profile_image_url[49:])
+        s3_image = s3.Object('werecord', request.user.profile_image_url[49:])
         if s3_image.key:
             s3_image.delete()
 
         request.user.delete()
         
-        return JsonResponse({"message": "SUCCESS"}, status=204)  
+        return JsonResponse({'message': 'SUCCESS'}, status=204)  
 
 class Number(IntEnum):
     WEEK_DAYS    = 5
