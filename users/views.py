@@ -165,7 +165,6 @@ class StudentView(View):
     @login_required
     def get(self, request):
         user = request.user
-        #user = User.objects.get(id = 17)
 
         if not user.user_type.id == 2:
             return JsonResponse({'message': 'UNAUTHORIZED_USER_ERROR'}, status = 400)
