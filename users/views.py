@@ -338,8 +338,14 @@ class BatchListView(View):
         return JsonResponse({'result': total_results}, status = 200)
 
 class CreateBatchView(View):
+    @login_required
     def post(self, request):
         try:
+            user = request.user
+
+            if not user.user_type.id == 1:
+                return JsonResponse({'message': 'UNAUTHORIZED_USER_ERROR'}, status = 400)
+
             data      = json.loads(request.body)
             start_day = time.strptime(data['start_day'], "%Y-%m-%d")
             end_day   = time.strptime(data['end_day'], "%Y-%m-%d")
@@ -366,8 +372,14 @@ class CreateBatchView(View):
             return JsonResponse({'message': 'DATE_FORM_ERROR'}, status=400)
 
 class ModifyBatchView(View):
+    @login_required
     def patch(self, request, batch_id):
         try:
+            user = request.user
+
+            if not user.user_type.id == 1:
+                return JsonResponse({'message': 'UNAUTHORIZED_USER_ERROR'}, status = 400)
+
             data      = json.loads(request.body)
             start_day = time.strptime(data['start_day'], "%Y-%m-%d")
             end_day   = time.strptime(data['end_day'], "%Y-%m-%d")
@@ -401,7 +413,13 @@ class ModifyBatchView(View):
         except ValueError:
             return JsonResponse({'message': 'DATE_FORM_ERROR'}, status=400)
 
+    @login_required
     def delete(self, request, batch_id):
+        user = request.user
+
+        if not user.user_type.id == 1:
+            return JsonResponse({'message': 'UNAUTHORIZED_USER_ERROR'}, status = 400)
+
         if User.objects.filter(batch_id=batch_id).exists():
             return JsonResponse({'message': 'ALREADY_USED_ERROR'}, status=400)
             
