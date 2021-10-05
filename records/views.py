@@ -3,6 +3,7 @@ import datetime
 
 from django.http     import JsonResponse
 from django.views    import View
+from django.utils    import timezone
 
 from records.models  import DailyRecord, Record, Message
 from utils.decorator import login_required
@@ -11,13 +12,13 @@ from utils.check_ip  import check_ip
 class RecordCheckView(View):
     @login_required
     def get(self, request):
-        user        = request.user
-        now_korea    = datetime.datetime.now() + datetime.timedelta(seconds=32406)
-        record       = user.record_set.last()
-        start_record = user.record_set.filter(start_at__date=now_korea.date()).first() 
-        check_date   = record.start_at.date() if record else None
-        check_stop   = user.dailyrecord_set.last()
-        user_status  = False if not record else True if now_korea.date() == record.start_at.date() and not record.end_at else False
+        user          = request.user
+        now_korea     = timezone.now()
+        record        = user.record_set.last()
+        today_records = user.record_set.filter(start_at__date=now_korea.date())
+        check_date    = record.start_at.date() if record else None
+        check_stop    = user.dailyrecord_set.last()
+        user_status   = False if not record else True if now_korea.date() == record.start_at.date() and not record.end_at else False
 
         if record and not now_korea.date() == check_date and not record.end_at:
             return JsonResponse({'message': 'NEED_TO_RECORD_ENDTIME_ERROR', 'result': check_date}, status=400)
@@ -26,7 +27,8 @@ class RecordCheckView(View):
                     'user_id'         : user.id,
                     'user_name'       : user.name,
                     'user_status'     : user_status,
-                    'user_start_time' : start_record.start_at.time() if user_status else None,
+                    'last_start_time' : today_records.last().start_at.time() if today_records else None,
+                    'total_time'      : sum([record.residence_time if record.residence_time else 0 for record in today_records if today_records]),
                     'start_status'    : False if not record else True if now_korea.date() == check_date else False,
                     'stop_status'     : False if not check_stop else True if now_korea.date() == check_stop.date else False
         }
@@ -86,7 +88,7 @@ class RecordStartView(View):
     @check_ip
     def post(self, request):
         user          = request.user
-        now_korea     = datetime.datetime.now() + datetime.timedelta(seconds=32406)
+        now_korea     = timezone.now()
         standard_time = now_korea.replace(hour=0, minute=0, second=0, microsecond=0)
         
         if user.record_set.filter(start_at__date=now_korea.date()).exists():
@@ -107,9 +109,7 @@ class RecordStartView(View):
         user.save()
 
         result = {
-                    'user_id'   : user.id,
-                    'user_name' : user.name,
-                    'start_at'  : str(now_korea.time())
+                    'start_at' : str(now_korea.time())
         }
 
         return JsonResponse({'result': result}, status=201)
@@ -118,8 +118,8 @@ class RecordPauseView(View):
     @login_required
     def post(self, request):
         user      = request.user
+        now_korea = timezone.now()
         record    = user.record_set.last()
-        now_korea = datetime.datetime.now() + datetime.timedelta(seconds=32406)
 
         if not record or (not now_korea.date() == record.start_at and record.end_at):
             return JsonResponse({'message': 'NEED_TO_RECORD_STARTTIME_ERROR'}, status=400)
@@ -137,15 +137,22 @@ class RecordPauseView(View):
         user.batch.total_time += (now_korea - record.start_at).seconds
         user.batch.save()
 
-        return JsonResponse({'message': 'SUCCESS'}, status=201)
+        today_records = user.record_set.filter(start_at__date=now_korea.date())
+
+        result = {
+                    'total_time' : sum([record.residence_time for record in today_records])
+        }
+
+        return JsonResponse({'result': result}, status=201)
 
 class RecordRestartView(View):
     @login_required
     @check_ip
     def post(self, request):
-        user      = request.user
-        record    = user.record_set.last()
-        now_korea = datetime.datetime.now() + datetime.timedelta(seconds=32406)
+        user          = request.user
+        now_korea     = timezone.now()
+        record        = user.record_set.last()
+        today_records = user.record_set.filter(start_at__date=now_korea.date())
         
         if not record or not now_korea.date() == record.start_at.date():
             return JsonResponse({'message': 'NEED_TO_RECORD_STARTTIME_ERROR'}, status=400)
@@ -155,14 +162,19 @@ class RecordRestartView(View):
 
         Record.objects.create(user_id=user.id, start_at=now_korea)
 
-        return JsonResponse({'message': 'SUCCESS'}, status=201)
+        result = {
+                    'restart_at' : str(now_korea.time()),
+                    'total_time' : sum([record.residence_time if record.residence_time else 0 for record in today_records])
+        }
+
+        return JsonResponse({'result': result}, status=201)
 
 class RecordStopView(View):
     @login_required
     @check_ip
     def post(self, request):
         user          = request.user
-        now_korea     = datetime.datetime.now() + datetime.timedelta(seconds=32406)
+        now_korea     = timezone.now()
         record        = user.record_set.last()
         records       = user.record_set.filter(start_at__date=now_korea.date())
         standard_time = record.start_at.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -202,9 +214,10 @@ class RecordStopView(View):
         DailyRecord.objects.create(user_id=user.id, date=end_at.date(), total_time=daily_total_time)
 
         result = {
-                    'user_id'   : user.id,
-                    'user_name' : user.name,
-                    'comment'   : Message.objects.all().order_by('?').first().content
+                    'user_id'    : user.id,
+                    'user_name'  : user.name,
+                    'total_time' : daily_total_time,
+                    'comment'    : Message.objects.all().order_by('?').first().content
         }
 
         return JsonResponse({'result': result}, status=201)

@@ -12,6 +12,7 @@ from enum              import IntEnum
 
 from django.views      import View
 from django.http       import JsonResponse
+from django.utils      import timezone
 
 from my_settings       import SECRET, ALGORITHM
 from werecord.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
@@ -158,8 +159,9 @@ class UserInfoView(View):
         return JsonResponse({'message': 'SUCCESS'}, status=204)  
 
 class Number(IntEnum):
-    WEEK_DAYS    = 5
-    GOST_RANKING = 3
+    WEEK_DAYS     = 5
+    BATCH_RANKING = 3
+    GOST_RANKING  = 5
 
 class StudentView(View):
     @login_required
@@ -172,7 +174,7 @@ class StudentView(View):
         user       = User.objects.select_related('batch').prefetch_related('record_set','dailyrecord_set').get(id=user.id)
         record     = user.record_set.last()
         records    = user.dailyrecord_set.all()
-        now_korea  = datetime.datetime.now() + datetime.timedelta(seconds=32406)
+        now_korea  = timezone.now()
         check_date = record.start_at.date() if record else None
         check_stop = user.dailyrecord_set.last()
 
@@ -221,12 +223,12 @@ class BatchView(View):
         if user.user_type_id == 2 and not user.batch.id == batch_id:
             return JsonResponse({'message': 'NOT_YOUR_BATCH_ERROR'}, status = 400)
 
-        winner_batch        = Batch.objects.all().order_by('-total_time').first()
+        winner_batches      = Batch.objects.all().order_by('-total_time')[:Number.BATCH_RANKING]
         my_batch            = Batch.objects.get(id=batch_id)
         my_batch_users      = User.objects.filter(batch_id=my_batch.id).order_by('name')
         my_batch_mentor     = User.objects.get(name=my_batch.mentor_name, user_type_id=1) \
                                 if User.objects.filter(name=my_batch.mentor_name, user_type_id=1).exists() else None
-        now_korea           = datetime.datetime.now() + datetime.timedelta(seconds=32406)
+        now_korea           = timezone.now()
         last_week_start_day = date.fromisocalendar(now_korea.isocalendar().year, now_korea.isocalendar().week-1, 1)
         last_week_end_day   = last_week_start_day + datetime.timedelta(days=6)
 
@@ -250,14 +252,17 @@ class BatchView(View):
                 index_number = compare_times.index(ranking_time)
                 user_informaion['user_id']                   = my_batch_users[index_number].id
                 user_informaion['user_name']                 = my_batch_users[index_number].name
+                user_informaion['user_profile_image_url']    = my_batch_users[index_number].profile_image_url
                 user_informaion['user_last_week_total_time'] = ranking_time
                 ranking_results.append(user_informaion)
         
         result = {
-                    'winner_batch_information' : {
-                                'winner_batch_name'       : winner_batch.name,
-                                'winner_batch_total_time' : winner_batch.total_time
-                    },
+                    'winner_batches_information' : [
+                                                        {
+                                                            'batch_name'       : batch.name,
+                                                            'batch_total_time' : batch.total_time
+                                                        } for batch in winner_batches
+                    ],
                     'my_batch_information' : {
                                 'batch_id'         : my_batch.id,
                                 'batch_name'       : my_batch.name,
@@ -303,7 +308,7 @@ class BatchListView(View):
         if not user.user_type.id == 1:
             return JsonResponse({'message': 'UNAUTHORIZED_USER_ERROR'}, status = 400)
 
-        now_korea     = datetime.datetime.now() + datetime.timedelta(seconds=32406)        
+        now_korea     = timezone.now()      
         total_results = []
 
         for batch in batches:
