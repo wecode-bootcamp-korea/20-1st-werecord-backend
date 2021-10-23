@@ -177,8 +177,8 @@ class StudentView(View):
         now_korea  = timezone.now()
         check_date = record.start_at.date() if record else None
         check_stop = user.dailyrecord_set.last()
-
-        week_start_day = date.fromisocalendar(now_korea.isocalendar().year, now_korea.isocalendar().week, 1)
+    
+        week_start_day = date.fromisocalendar(now_korea.isocalendar()[0], now_korea.isocalendar()[1], 1)
         week_end_day   = week_start_day + datetime.timedelta(days=6)
         week_records   = records.filter(date__range=[week_start_day, week_end_day])
 
@@ -229,7 +229,7 @@ class BatchView(View):
         my_batch_mentor     = User.objects.get(name=my_batch.mentor_name, user_type_id=1) \
                                 if User.objects.filter(name=my_batch.mentor_name, user_type_id=1).exists() else None
         now_korea           = timezone.now()
-        last_week_start_day = date.fromisocalendar(now_korea.isocalendar().year, now_korea.isocalendar().week-1, 1)
+        last_week_start_day = date.fromisocalendar(now_korea.isocalendar()[0], now_korea.isocalendar()[1]-1, 1)
         last_week_end_day   = last_week_start_day + datetime.timedelta(days=6)
 
         compare_times = []
